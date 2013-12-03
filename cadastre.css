@@ -1,3 +1,22 @@
+/*#loader{
+	display: none;
+	width: 100px;
+	height: 100px;
+	background: url('loader.GIF');
+	position: absolute;
+}*/
+div[title='Кадастр']{
+	float: left;
+}
+#loader{
+  display: none;
+  background-image: url(map-loader.gif);
+  background-size: 23px;
+  height: 23px;
+  width: 23px;
+  float: right;
+}
+
 .cadastreLeftMenuLabel
 {
 	margin-Left: 3px;
@@ -29,7 +48,10 @@
 #tableInfo th {
      /*background: #ccc;*/
      text-align: left;
-    }
+}
+#tableInfo tbody tr td {
+	padding-left:15px;
+}
 /*#tableInfo td, th {
      border: 1px solid #800; 
      padding: 4px; 
