@@ -1,5 +1,5 @@
 (function(){
-	"use strict";
+	
 	var extendJQuery;
 	extendJQuery = function() {
 		$('input.inputStyle').each(function(){
@@ -88,7 +88,6 @@
 	}
 
 	var createBalloonInfo = function( x, y, extent, layerId ){
-		console.log("call createBalloonInfo");
 		if( balloonInfo )
 			balloonInfo.setVisible( false );
 		if( cadastreLayerInfo )
@@ -262,7 +261,7 @@
 			cadastreLayerInfo = gmxAPI.map.addObject();
 			var geo=[];
 			geometry[0].forEach(function(value){
-				geo.push(gmxAPI.from_merc_x( gmxAPI.merc_x( value[0] ) - parseFloat( dx ).toFixed( 2 )*( -1 ) ), gmxAPI.from_merc_y( gmxAPI.merc_y( value[1] ) - parseFloat( dy ).toFixed( 2 )*( -1 ) ));
+				geo.push([gmxAPI.from_merc_x( gmxAPI.merc_x( value[0] ) - parseFloat( dx ).toFixed( 2 )*( -1 ) ), gmxAPI.from_merc_y( gmxAPI.merc_y( value[1] ) - parseFloat( dy ).toFixed( 2 )*( -1 ) )]);
 			});
 			var geom = {
 				"type":"POLYGON",
@@ -363,7 +362,6 @@
 						if(data.features[0].attributes.ERRORCODE!=1){
 							map.zoomToExtent(minX,minY,maxX,maxY);
 							var extent = {minX: minX, minY: minY, maxX: maxX, maxY: maxY};
-							console.log(x, y, extent);
 							createBalloonInfo( x, y, extent, "");
 						}else{
 							map.zoomToExtent(minX,minY,maxX,maxY);
