@@ -353,8 +353,9 @@
 						$('#loader').show();
 					},
 					error:  function(){
-						alert("Ошибка получения данных!");
 						$('#loader').hide();
+						$("#alert").show();
+						setTimeout(function(){$("#alert").hide();},5000);
 					},
 					success: function(data) {
 						$('#loader').hide();
@@ -462,8 +463,9 @@
 								$("#loader").hide();
 							});
 							cadastreLayerSearch.addListener('onImageError', function(ev){
-								alert('Ошибка загрузки');
 								$("#loader").hide();
+								$("#alert").show();
+								setTimeout(function(){$("#alert").hide();},5000);
 							});
 						}
 
@@ -668,8 +670,9 @@
 			$("#loader").hide();
 		});
 		cadastreLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		
 		costLayer = this.mapObject.addObject();
@@ -677,48 +680,54 @@
 			$("#loader").hide();
 		});
 		costLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		costByAreaLayer = this.mapObject.addObject();
 		costByAreaLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
 		});
 		costByAreaLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		useTypeLayer = this.mapObject.addObject();
 		useTypeLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
 		});
 		useTypeLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		categoryLayer = this.mapObject.addObject();
 		categoryLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
 		});
 		categoryLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		mapUpdateLayer = this.mapObject.addObject();
 		mapUpdateLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
 		});
 		mapUpdateLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		mapVisitorsLayer = this.mapObject.addObject();
 		mapVisitorsLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
 		});
 		mapVisitorsLayer.addListener('onImageError', function(e){
-			alert('Ошибка загрузки');
 			$("#loader").hide();
+			$("#alert").show();
+			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		
 		var iListenerID = -1;
@@ -737,7 +746,13 @@
 		}
 
 		var cadastreLegend = _div();
-		_(div, [_table([_tbody(trs)]), cadastreLegend]);
+		var alertDiv = _div(null, [['attr', 'id', "alert"]]);
+		$(alertDiv).css({"color":"red","font-weight":"bold","font-size":"12px"});
+		$("#alert").hide();
+		$(alertDiv).append("Ошибка получения данных!");
+
+		_(div, [_table([_tbody(trs)]), cadastreLegend, alertDiv]);
+
 		_(container, [div]);
 
 		this.unloadCadastre = function(){
