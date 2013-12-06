@@ -334,8 +334,8 @@
 		return cadastreNumber;
 	}
 
-	var cadastreSearch = function( map, value, condition ){
-		if(value!='' && condition){
+	var cadastreSearch = function( map, value ){
+		if(value!=''){
 			var cadastreNumber=checkCadastreNumber(value);
 			if(~cadastreNumber.indexOf(":")){
 				$.ajax({
@@ -482,7 +482,7 @@
 							balloonSearch = map.addBalloon();
 							balloonSearch.setPoint( converting( findInfo[ "XC" ] , "x" ), converting( findInfo[ "YC" ], "y" ) );
 							balloonSearch.setVisible( false );
-							html += "<h3>"+"Кадастровые участки  " + test( findInfo[ "PKK_ID" ] ) + "</h3><br><div><table style='text-align:left'>";
+							html += "<h3>"+"Кадастровый номер  " + test( findInfo[ "CAD_NUM" ] ) + "</h3><br><div><table style='text-align:left'>";
 							html += "<tr><th>Дата обновления сведений ПКК: </th><td> " + test( parseDate( findInfo[ "ACTUAL_DATE" ] ) ) + "</td></tr>";
 							html += "<tr><th>Кадастровый номер: </th><td> " + test( findInfo[ "CAD_NUM" ] ) + "</td></tr>";
 							html += "<tr><th>Имя: </th><td> " + test( findInfo[ "NAME" ] ) + "</td></tr>";
@@ -616,7 +616,7 @@
 		inputField.onkeydown = function(e){
 			var evt = e || window.event;
 			if( getkey( evt ) == 13){	
-				cadastreSearch( map, inputField.value, cbDivision.checked );
+				cadastreSearch( map, inputField.value );
 				return false;
 			}
 		}
@@ -624,12 +624,12 @@
 		var goButton = makeButton(_gtxt("Найти")),
 			_this = this;
 
-		goButton.onclick = function(){cadastreSearch(map,inputField.value,cbDivision.checked);}
+		goButton.onclick = function(){cadastreSearch( map, inputField.value );}
 
 		trs.push(_tr([_td([inputField],[['attr','colspan',2]]),_td([goButton])]));
 		trs.push(_tr([_td([],[['attr','height',15]])]));
 
-		cbDivision = _checkbox(false, 'checkbox');
+		cbDivision = _checkbox(true, 'checkbox');
 		cbDivision.setAttribute("id", "cadastreLayer");
 		cbDivision.onclick = fnRefreshMap;
 		trs.push(_tr([_td([cbDivision]), _td([_label([_t("Кадастровое деление")],[['attr', 'for', 'cadastreLayer'],['dir', 'className', 'cadastreLeftMenuLabel']])])], [['dir', 'className', 'cadastreLeftMenuRow']]));
@@ -741,10 +741,15 @@
 		_(container, [div]);
 
 		this.unloadCadastre = function(){
+			$("#loader").hide();
+			gmxAPI._tools.standart.removeTool( 'cadastreInfo' );
+			gmxAPI._tools.standart.removeTool( 'cadastreDx' );
 			if(mapListenerInfo)
 				map.removeListener('onClick', mapListenerInfo);
 			if(cadastreLayerListener)
 				map.removeListener("onMoveEnd",cadastreLayerListener);
+			if(iListenerID)
+				map.removeListener("onMoveEnd",iListenerID);
 			if(cadastreLayerInfo)
 				cadastreLayerInfo.remove();
 			if(cadastreLayer)
@@ -761,8 +766,8 @@
 				cadastreLayerSearch.setVisible(false);
 			inputCadNum.value = '66:41:0402004:16';
 			gmxAPI._tools.standart.selectTool('move');
-			gmxAPI._tools.standart.removeTool("cadastreInfo");
-			gmxAPI._tools.standart.removeTool("cadastreDx");
+			// gmxAPI._tools.standart.removeTool("cadastreInfo");
+			// gmxAPI._tools.standart.removeTool("cadastreDx");
 		}
 	}
 
