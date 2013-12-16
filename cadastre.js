@@ -114,9 +114,9 @@
 			imageDisplay: map.width() + ',' + getHeight() + ',96',
 			geometryType: 'esriGeometryPoint',
 			sr: '4326',
-			layers: layerId || 'top'//top or all or layerId
+			layers: layerId || 'top' //top or all or layerId
 		},function(data) {
-			if(!($.isEmptyObject(data)))
+			if(!($.isEmptyObject(data)) && data.results && data.results.length>0){
 				data.results.forEach(function(value){
 					switch (value.layerId) {
 						case 20:
@@ -169,6 +169,7 @@
 							html +="<tr><th>Экстент - Y макс.</th><td>" + test( value.attributes[ "Экстент - Y макс." ] ) + "</td></tr>";
 							html +="<tr><th>Объект обработан - можно удалять</th><td>" + test( value.attributes[ "Объект обработан - можно удалять" ] ) + "</td></tr>";
 							html +="</table></div>";
+							html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
 							break;
 						case 10:
 						case 8:
@@ -199,6 +200,7 @@
 							html +="<tr><th>Экстент - Y макс.</th><td>" + test( value.attributes[ "Экстент - Y макс." ] ) + "</td></tr>";
 							html +="<tr><th>Объект обработан - можно удалять</th><td>" + test( value.attributes[ "Объект обработан - можно удалять" ] ) + "</td></tr>";
 							html +="</table></div>";
+							html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
 							break;
 						case 4:
 						case 3:
@@ -225,6 +227,7 @@
 							html +="<tr><th>Объект обработан - можно удалять</th><td>" + test( value.attributes[ "Объект обработан - можно удалять" ] ) + "</td></tr>";
 							html +="<tr><th>G_AREA</th><td>" + test( value.attributes[ "G_AREA" ] ) + "</td></tr>";
 							html +="</table></div>";
+							html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
 							break;
 						case 1:
 							html +="<h3>" + test( value.layerName ) + ", " + test( value.attributes[ "Кадастровый номер" ] ) + "</h3><br><div><table id='tableInfo'style='text-align:left'>";
@@ -249,43 +252,48 @@
 							html +="<tr><th>Экстент - Y мин.</th><td>" + test( value.attributes[ "Экстент - Y мин." ] ) + "</td></tr>";
 							html +="<tr><th>Экстент - Y макс.</th><td>" + test( value.attributes[ "Экстент - Y макс." ] ) + "</td></tr>";
 							html +="</table></div>";
+							html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
 							break;
 					}
 					geometry = value.geometry.rings;
 				});
-			$( "#loader" ).hide();
-			balloonInfo.setVisible( true );
-			balloonInfo.visible = true;
-			html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
-			balloonInfo.div.innerHTML = html;
-			cadastreLayerInfo = gmxAPI.map.addObject();
-			var geo=[];
-			geometry[0].forEach(function(value){
-				geo.push([gmxAPI.from_merc_x( gmxAPI.merc_x( value[0] ) - parseFloat( dx ).toFixed( 2 )*( -1 ) ), gmxAPI.from_merc_y( gmxAPI.merc_y( value[1] ) - parseFloat( dy ).toFixed( 2 )*( -1 ) )]);
-			});
-			var geom = {
-				"type":"POLYGON",
-				"coordinates": [geo]
-			};
-			cadastreLayerInfo.setGeometry( geom );
-			$( "#getGeom" ).click( function(){
-				new gmxAPI.map.drawing.addObject( geom );
-			});
-			cadastreLayerInfo.setStyle({
-				outline: {
-					color: 0x0000ff,
-					thickness: 1,
-					opacity: 100
-				},
-				fill: {
-					color: 0xffff00,
-					opacity: 100
-				}
-			});
+				$( "#loader" ).hide();
+				$("#alert").hide();
+				balloonInfo.setVisible( true );
+				balloonInfo.visible = true;
+				balloonInfo.div.innerHTML = html;
+				cadastreLayerInfo = gmxAPI.map.addObject();
+				var geo=[];
+				geometry[0].forEach(function(value){
+					geo.push([gmxAPI.from_merc_x( gmxAPI.merc_x( value[0] ) - parseFloat( dx ).toFixed( 2 )*( -1 ) ), gmxAPI.from_merc_y( gmxAPI.merc_y( value[1] ) - parseFloat( dy ).toFixed( 2 )*( -1 ) )]);
+				});
+				var geom = {
+					"type": "POLYGON",
+					"coordinates": [ geo ]
+				};
+				cadastreLayerInfo.setGeometry( geom );
+				$( "#getGeom" ).click( function(){
+					new gmxAPI.map.drawing.addObject( geom );
+				});
+				cadastreLayerInfo.setStyle({
+					outline: {
+						color: 0x0000ff,
+						thickness: 1,
+						opacity: 100
+					},
+					fill: {
+						color: 0xffff00,
+						opacity: 100
+					}
+				});
+			}else{
+				$( "#loader" ).hide();
+				$( "#alert" ).show();
+			}
 		});
 		balloonInfo.resize();
-		balloonInfo.addListener('onClose', function( obj ){
-			cadastreLayerInfo.setVisible(false);
+		balloonInfo.addListener( 'onClose', function( obj ){
+			cadastreLayerInfo.setVisible( false );
 		});
 	}
 
@@ -351,11 +359,11 @@
 					}),
 					beforeSend: function(){
 						$('#loader').show();
+						$("#alert").hide();
 					},
 					error:  function(){
 						$('#loader').hide();
 						$("#alert").show();
-						setTimeout(function(){$("#alert").hide();},5000);
 					},
 					success: function(data) {
 						$('#loader').hide();
@@ -461,11 +469,11 @@
 						 	cadastreLayerSearch.setImageExtent({url: url + bboxUrl, extent: extent, noCache: true});
 						 	cadastreLayerSearch.addListener('onImageLoad', function(ev){
 								$("#loader").hide();
+								$("#alert").hide();
 							});
 							cadastreLayerSearch.addListener('onImageError', function(ev){
 								$("#loader").hide();
 								$("#alert").show();
-								setTimeout(function(){$("#alert").hide();},5000);
 							});
 						}
 
@@ -668,66 +676,66 @@
 		cadastreLayer = this.mapObject.addObject();
 		cadastreLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		cadastreLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		
 		costLayer = this.mapObject.addObject();
 		costLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		costLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		costByAreaLayer = this.mapObject.addObject();
 		costByAreaLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		costByAreaLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		useTypeLayer = this.mapObject.addObject();
 		useTypeLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		useTypeLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		categoryLayer = this.mapObject.addObject();
 		categoryLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		categoryLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		mapUpdateLayer = this.mapObject.addObject();
 		mapUpdateLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		mapUpdateLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		mapVisitorsLayer = this.mapObject.addObject();
 		mapVisitorsLayer.addListener('onImageLoad', function(e){
 			$("#loader").hide();
+			$("#alert").hide();
 		});
 		mapVisitorsLayer.addListener('onImageError', function(e){
 			$("#loader").hide();
 			$("#alert").show();
-			setTimeout(function(){$("#alert").hide();},5000);
 		});
 		
 		var iListenerID = -1;
@@ -747,10 +755,8 @@
 
 		var cadastreLegend = _div();
 		var alertDiv = _div(null, [['attr', 'id', "alert"]]);
-		$(alertDiv).css({"color":"red","font-weight":"bold","font-size":"12px"});
-		$("#alert").hide();
+		$(alertDiv).css({"color": "red", "font-weight": "bold", "font-size": "12px", "display": "none"});
 		$(alertDiv).append("Ошибка получения данных!");
-
 		_(div, [_table([_tbody(trs)]), cadastreLegend, alertDiv]);
 
 		_(container, [div]);
