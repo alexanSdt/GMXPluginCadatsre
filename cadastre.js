@@ -884,7 +884,7 @@
 	var publicInterface = {
 		pluginName: 'Cadastre',
 		afterViewer: function( params ){
-			var cadastreTools = (gmxAPI.map.controlsManager ? gmxAPI.map.controlsManager.getControl('layers') : new gmxAPI._ToolsContainer('cadastre'));
+			var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
 			
 			var checkCadastre, cadastreMenu = new leftMenu();
 			var unloadCadastre = function(){
@@ -941,17 +941,17 @@
 			}
 
 			var attr = {
-				'id': "cadastre",
-				'rus': "Кадастр",
-				'eng': "Cadastre",
-				'onClick': onClickCadastreTools,
-				'onCancel': onCancelCadastreTools,
-				'onmouseover': function() { this.style.color = "orange"; },
-				'onmouseout': function() { this.style.color = "wheat"; },
-				'hint': "Кадастр"
+				id: "cadastre",
+				rus: "Кадастр",
+				eng: "Cadastre",
+				overlay: true,
+				onClick: onClickCadastreTools,
+				onCancel: onCancelCadastreTools,
+				onmouseover: function() { this.style.color = "orange"; },
+				onmouseout: function() { this.style.color = "wheat"; },
+				hint: "Кадастр"
 			};			
-			if('addOverlay' in cadastreTools) cadastreTools.addOverlay( 'cadastre', attr);
-			else cadastreTools.addTool( 'cadastre', attr);
+			cadastreTools.addTool( 'cadastre', attr);
 			
 			$( "div[title='Кадастр']").parent().append( '<div id="loader"></div>' );
 		}
