@@ -792,6 +792,19 @@
 				cadastreLayerInfo.remove();
 			if(cadastreLayer)
 				cadastreLayer.remove();
+			if(costLayer)
+				costLayer.remove();
+			if(costByAreaLayer)
+				costByAreaLayer.remove();
+			if(useTypeLayer)
+				useTypeLayer.remove();
+			if(categoryLayer)
+				categoryLayer.remove();
+			if(mapUpdateLayer)
+				mapUpdateLayer.remove();
+			if(mapVisitorsLayer)
+				mapVisitorsLayer.remove();
+
 			if(balloonInfo){
 				balloonInfo.remove();
 				balloonInfo = false;
