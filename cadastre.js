@@ -783,7 +783,7 @@
 			gmxAPI._tools.standart.removeTool( 'cadastreInfo' );
 			gmxAPI._tools.standart.removeTool( 'cadastreDx' );
 			if(mapListenerInfo)
-				map.removeListener('onClick', mapListenerInfo);
+				cadastreLayer.removeListener('onClick', mapListenerInfo);
 			if(cadastreLayerListener)
 				map.removeListener("onMoveEnd",cadastreLayerListener);
 			if(iListenerID)
@@ -892,7 +892,7 @@
 			'onCancel': function(){
 				gmxAPI._tools.standart.selectTool( "move" );
 				if( mapListenerInfo )
-					map.removeListener("onClick", mapListenerInfo );
+					cadastreLayer.removeListener("onClick", mapListenerInfo );
 				if( cadastreLayerListener )
 					map.removeListener( "onMoveEnd", cadastreLayerListener );
 				if( cadastreLayerInfo )
