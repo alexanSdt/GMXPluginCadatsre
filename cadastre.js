@@ -54,6 +54,7 @@
     var cadastreLayerInfo, cadastreLayerSearch, cadastreLayer;
     var cadastreServer;
     var dialog, inputCadNum;
+    var geometryRequest = null;
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -96,6 +97,8 @@
     }
 
     var createBalloonInfo = function (x, y, extent, layerId) {
+        if (geometryRequest)
+            geometryRequest.abort();
         if (balloonInfo)
             balloonInfo.setVisible(false);
         if (cadastreLayerInfo)
@@ -113,7 +116,8 @@
 
         var geometry = "";
         $("#loader").show();
-        $.getJSON(cadastreServer + 'CadastreNew/CadastreSelected/MapServer/identify', {
+
+        geometryRequest = $.getJSON(cadastreServer + 'CadastreNew/CadastreSelected/MapServer/identify', {
             f: 'json',
             geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":4326}}',
             tolerance: '0',
