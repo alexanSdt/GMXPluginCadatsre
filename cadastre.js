@@ -638,13 +638,15 @@
                 cadastreLegend.innerHTML = 'Общее количество посещений</br><table cellspacing="0" cellpadding="0"><tbody><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0"src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWF676+9cbG/83No3FH3QAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>менее 100 000</span></td></tr><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWF656U9aOZ/6eccAhG3wAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>100 000 - 500 000</span></td></tr><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWF6YBu84Ju/YVuMQ3iHgAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>500 000 - 1 000 000</span></td></tr><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWF4mNR7GFL9WBHhZwXygAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>1 000 000 - 5 000 000</span></td></tr><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWF10k94EUw6D0k9XeHogAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>5 000 000 - 10 000 000</span></td></tr><tr><td class=cadastreLegendImageColumn><img class=cadastreLegendImage border="0" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAAAXNSR0IB2cksfwAAABhQTFRF/v//x8fHubq6qaqqhIWFzDAw1B8f3AAAabp87wAAAAh0Uk5TAP/////////VylQyAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQokWNgIBMwsmABTGApFlY2DMDKApFiY8cAbKNSw00KdwJgwpZsmMlNhABUegvpjanC7gAAAABJRU5ErkJggg=="></td><td><span>более 10 000 000</span></td></tr></tbody></table>';
             }
 
-            cadastreLayer.setVisible(cbDivision.checked);
             costLayer.setVisible(rbCostLayer.checked);
             costByAreaLayer.setVisible(rbCostByAreaLayer.checked);
             useTypeLayer.setVisible(rbUseType.checked);
             categoryLayer.setVisible(rbCategory.checked);
             mapUpdateLayer.setVisible(rbMapUpdate.checked);
             mapVisitorsLayer.setVisible(rbMapVisitors.checked);
+            cadastreLayer.setVisible(cbDivision.checked);
+
+            cadastreLayer.setDepth(1000);
         }
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors, costLayer, costByAreaLayer, useTypeLayer, categoryLayer, mapUpdateLayer, mapVisitorsLayer;
         var div = _div(null, [['dir', 'className', 'cadastreLeftMenuContainer']]);
@@ -704,13 +706,13 @@
         trs.push(_tr([_td([rbMapVisitors]), _td([_label([_t("Общее количество посещений")], [['attr', 'for', 'rbMapVisitors'], ['dir', 'className', 'cadastreLeftMenuLabel']])])], [['dir', 'className', 'cadastreLeftMenuRow']]));
 
         this.mapObject = gmxAPI.map.addObject();
-        cadastreLayer = this.mapObject.addObject();
         costLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         costByAreaLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         useTypeLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         categoryLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         mapUpdateLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         mapVisitorsLayer = this.mapObject.addObject(null, { type: 'Overlay' });
+        cadastreLayer = this.mapObject.addObject();
 
         cadastreLayer.addListener('onImageLoad', function (e) {
             $("#loader").hide();
