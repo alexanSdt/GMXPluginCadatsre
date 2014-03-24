@@ -55,6 +55,7 @@
     var cadastreServer;
     var dialog, inputCadNum;
     var geometryRequest = null;
+    var fileName = "";
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -99,8 +100,10 @@
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
             geometryRequest.abort();
-        if (balloonInfo)
+        if (balloonInfo) {
             balloonInfo.setVisible(false);
+            $(".kosmosnimki_balloon").remove();
+        }
         if (cadastreLayerInfo)
             cadastreLayerInfo.setVisible(false);
         balloonInfo = gmxAPI.map.addBalloon();
@@ -129,6 +132,7 @@
             layers: layerId || 'top' //top or all or layerId
         }, function (data) {
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
+                fileName = data.results[data.results.length - 1].value;
                 data.results.forEach(function (value) {
                     switch (value.layerId) {
                         case 20:
@@ -181,7 +185,7 @@
                             html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
                             html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
                             html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
+                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             break;
                         case 10:
                         case 8:
@@ -212,7 +216,7 @@
                             html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
                             html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
                             html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
+                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             break;
                         case 4:
                         case 3:
@@ -239,7 +243,7 @@
                             html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
                             html += "<tr><th>G_AREA</th><td>" + test(value.attributes["G_AREA"]) + "</td></tr>";
                             html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
+                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             break;
                         case 1:
                             html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo'style='text-align:left'>";
@@ -264,7 +268,7 @@
                             html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
                             html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
                             html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" id="getGeom" >Получить геометрию</span>'
+                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             break;
                     }
                     geometry = value.geometry.rings;
@@ -292,18 +296,30 @@
                     };
                 }
                 cadastreLayerInfo.setGeometry(geom);
-                $("#getGeom").click(function () {
-                    new gmxAPI.map.drawing.addObject(geom);
+
+                $(".getGeom").click(function () {
+                    var result = JSON.stringify([{
+                        "properties": { "isVisible": true, "text": "" },
+                        "geometry": geom
+                    }]);
+                    sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
+                        name: fileName,
+                        format: "Shape",
+                        points: '',
+                        lines: '',
+                        polygons: result
+                    });
                 });
+
                 cadastreLayerInfo.setStyle({
                     outline: {
-                        color: 0xffff00,
+                        color: "#0000ff",
                         thickness: 2,
                         opacity: 100
                     },
                     fill: {
                         color: 0xffff00,
-                        opacity: 0
+                        opacity: 0.1
                     }
                 });
             } else {
@@ -665,7 +681,7 @@
         }
 
         var goButton = makeButton(_gtxt("Найти")),
-			_this = this;
+            _this = this;
 
         goButton.onclick = function () { cadastreSearch(map, inputField.value); }
 
