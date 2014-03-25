@@ -313,13 +313,13 @@
 
                 cadastreLayerInfo.setStyle({
                     outline: {
-                        color: "#0000ff",
-                        thickness: 2,
+                        color: "#FF9B18",
+                        thickness: 3,
                         opacity: 100
                     },
                     fill: {
-                        color: 0xffff00,
-                        opacity: 0.1
+                        color: 0xffffff,
+                        opacity: 0.0
                     }
                 });
             } else {
