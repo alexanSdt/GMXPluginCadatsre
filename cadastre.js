@@ -102,7 +102,8 @@
             geometryRequest.abort();
         if (balloonInfo) {
             balloonInfo.setVisible(false);
-            $(".kosmosnimki_balloon").remove();
+            balloonInfo.remove();
+            balloonInfo = null;
         }
         if (cadastreLayerInfo)
             cadastreLayerInfo.setVisible(false);
