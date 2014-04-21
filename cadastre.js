@@ -121,17 +121,25 @@
         var geometry = "";
         $("#loader").show();
 
-        geometryRequest = $.getJSON(cadastreServer + 'CadastreNew/CadastreSelected/MapServer/identify', {
-            f: 'json',
-            geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":4326}}',
-            tolerance: '0',
-            returnGeometry: 'true',
-            mapExtent: '{"xmin":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.minX) - parseFloat(dx).toFixed(2)) + ',"ymin":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.minY) - parseFloat(dy).toFixed(2)) + ',"xmax":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.maxX) - parseFloat(dx).toFixed(2)) + ',"ymax":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.maxY) - parseFloat(dy).toFixed(2)) + ',"spatialReference":{"wkid":4326}}',
-            imageDisplay: map.width() + ',' + getHeight() + ',96',
-            geometryType: 'esriGeometryPoint',
-            sr: '4326',
-            layers: layerId || 'top' //top or all or layerId
-        }, function (data) {
+        $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
+            crossDomain: true,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            async: false,
+            dataType: "jsonp",
+            jsonpCallback: 'fnsuccesscallback',
+            data: {
+                f: 'json',
+                geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":4326}}',
+                tolerance: '0',
+                returnGeometry: 'true',
+                mapExtent: '{"xmin":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.minX) - parseFloat(dx).toFixed(2)) + ',"ymin":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.minY) - parseFloat(dy).toFixed(2)) + ',"xmax":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.maxX) - parseFloat(dx).toFixed(2)) + ',"ymax":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.maxY) - parseFloat(dy).toFixed(2)) + ',"spatialReference":{"wkid":4326}}',
+                imageDisplay: map.width() + ',' + getHeight() + ',96',
+                geometryType: 'esriGeometryPoint',
+                sr: '4326',
+                layers: layerId || 'top' //top or all or layerId
+            }
+        }).done(function (data) {
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
                 fileName = data.results[data.results.length - 1].value;
                 data.results.forEach(function (value) {
@@ -327,7 +335,10 @@
                 $("#loader").hide();
                 $("#alert").show();
             }
+        }).fail(function (err) {
+            console.log("Ошибка получения данных: " + err);
         });
+
         balloonInfo.resize();
         balloonInfo.addListener('onClose', function (obj) {
             cadastreLayerInfo.setVisible(false);
@@ -383,75 +394,76 @@
         if (value != '') {
             var cadastreNumber = checkCadastreNumber(value);
             if (~cadastreNumber.indexOf(":")) {
-                $.ajax({
-                    url: cadastreServer + 'CadastreNew/Cadastre/MapServer/exts/GKNServiceExtension/online/parcel/find',
+
+                $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/exts/GknServiceExtension/online/parcel/find', {
+                    crossDomain: true,
                     type: "GET",
-                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
                     async: false,
-                    data: ({
+                    dataType: "jsonp",
+                    jsonpCallback: 'fnsuccesscallback',
+                    data: {
                         cadNum: cadastreNumber,//61:6:10104:2 66:41:0402004:16
                         onlyAttributes: 'false',
                         returnGeometry: 'true',
                         f: 'json'
-                    }),
+                    },
                     beforeSend: function () {
                         $('#loader').show();
                         $("#alert").hide();
-                    },
-                    error: function () {
-                        $('#loader').hide();
-                        $("#alert").show();
-                    },
-                    success: function (data) {
-                        $('#loader').hide();
-                        var x = converting(data.features[0].attributes.XC, "x"), y = converting(data.features[0].attributes.YC, "y"), maxX = converting(data.features[0].attributes.XMAX, "x"), minX = converting(data.features[0].attributes.XMIN, "x"), maxY = converting(data.features[0].attributes.YMAX, "y"), minY = converting(data.features[0].attributes.YMIN, "y");
-                        if (data.features[0].attributes.ERRORCODE != 1) {
-                            map.zoomToExtent(minX, minY, maxX, maxY);
-                            var extent = { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
-                            createBalloonInfo(x, y, extent, "");
-                        } else {
-                            map.zoomToExtent(minX, minY, maxX, maxY);
-                            if (balloonInfo)
-                                balloonInfo.setVisible(false);
-                            if (cadastreLayerInfo)
-                                cadastreLayerInfo.setVisible(false);
-                            var data = data.features[0].attributes;
-                            var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
-                            balloonSearch = map.addBalloon();
-                            balloonSearch.setPoint(x, y);
-                            balloonSearch.setVisible(false);
-                            html += "<h3>" + "Кадастровые участки" + "</h3><br><div><table style='text-align:left'>";
-                            html += "<tr><th>Статус: </th><td>" + test(PARCEL_STATES[parseInt(data["PARCEL_STATUS"]) - 1]) + "</td></tr>";
-                            html += "<tr><th>Адрес: </th><td>" + test(data["OBJECT_ADDRESS"]) + "</td></tr>";
-                            html += "<tr><th>Декларированная площадь: </th><td>" + test(data["AREA_VALUE"]) + test(UNITS[data["AREA_UNIT"]]) + "</td></tr>";
-                            html += "<tr><th>Кадастровая стоимость: </th><td>" + test(data["CAD_COST"]) + test(UNITS[data["CAD_UNIT"]]) + "</td></tr>";
-                            html += "<tr><th>Форма собственности: </th><td>" + test(data["RC_TYPE"]) + "</td></tr>";
-                            html += "<tr><th>Дата постановки на учет: </th><td>" + test(parseDate(data["DATE_CREATE"])) + "</td></tr>";
-                            var Num = data["PARCEL_CN"].substr(0, data["PARCEL_CN"].lastIndexOf(":"));
-                            html += "<tr><th>Квартал: </th><td>" + test(Num) + "</td></tr>";
-                            Num = Num.substr(0, Num.lastIndexOf(":"));
-                            html += "<tr><th>Район: </th><td>" + test(Num) + "</td></tr>";
-                            Num = Num.substr(0, Num.lastIndexOf(":"));
-                            html += "<tr><th>Округ: </th><td>" + test(Num) + "</td></tr>";
-                            html += "<tr><th>Дата обновления сведений ПКК: </th><td>" + test(parseDate(data["ACTUAL_DATE"])) + "</td></tr>";
-                            html += "<tr><th>Категория: </th><td>" + test(CATEGORY_TYPES[data["CATEGORY_TYPE"]]) + "</td></tr>";
-                            html += "<tr><th>Разрешенное использование </th><td></td></tr>";
-                            html += "<tr><th>По классификатору (код): </th><td>" + test(data["UTIL_CODE"]) + "</td></tr>";
-                            html += "<tr><th>По классификатору (описание): </th><td>" + test(UTILIZATIONS[data["UTIL_CODE"]]) + "</td></tr>";
-                            html += "<tr><th>По документу: </th><td>" + test(data["UTIL_BY_DOC"]) + "</td></tr>";
-                            html += "</table><br>";
-                            html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_information_online?KN=' + data["PARCEL_CN"] + '">Справочная информация об объекте недвижимости</a><br>';
-                            html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_gkn_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ГКН</a><br>';
-                            html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_egrp_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ЕГРП</a><br>';
-                            html += "</div>";
-                            balloonSearch.div.innerHTML = html;
-                            balloonSearch.setVisible(true);
-                            balloonSearch.resize();
-                            balloonSearch.addListener('onClose', function (obj) {
-                                cadastreLayerSearch.setVisible(false);
-                            });
-                        }
                     }
+                }).done(function (data) {
+                    $('#loader').hide();
+                    var x = converting(data.features[0].attributes.XC, "x"), y = converting(data.features[0].attributes.YC, "y"), maxX = converting(data.features[0].attributes.XMAX, "x"), minX = converting(data.features[0].attributes.XMIN, "x"), maxY = converting(data.features[0].attributes.YMAX, "y"), minY = converting(data.features[0].attributes.YMIN, "y");
+                    if (data.features[0].attributes.ERRORCODE != 1) {
+                        map.zoomToExtent(minX, minY, maxX, maxY);
+                        var extent = { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+                        createBalloonInfo(x, y, extent, "");
+                    } else {
+                        map.zoomToExtent(minX, minY, maxX, maxY);
+                        if (balloonInfo)
+                            balloonInfo.setVisible(false);
+                        if (cadastreLayerInfo)
+                            cadastreLayerInfo.setVisible(false);
+                        var data = data.features[0].attributes;
+                        var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
+                        balloonSearch = map.addBalloon();
+                        balloonSearch.setPoint(x, y);
+                        balloonSearch.setVisible(false);
+                        html += "<h3>" + "Кадастровые участки" + "</h3><br><div><table style='text-align:left'>";
+                        html += "<tr><th>Статус: </th><td>" + test(PARCEL_STATES[parseInt(data["PARCEL_STATUS"]) - 1]) + "</td></tr>";
+                        html += "<tr><th>Адрес: </th><td>" + test(data["OBJECT_ADDRESS"]) + "</td></tr>";
+                        html += "<tr><th>Декларированная площадь: </th><td>" + test(data["AREA_VALUE"]) + test(UNITS[data["AREA_UNIT"]]) + "</td></tr>";
+                        html += "<tr><th>Кадастровая стоимость: </th><td>" + test(data["CAD_COST"]) + test(UNITS[data["CAD_UNIT"]]) + "</td></tr>";
+                        html += "<tr><th>Форма собственности: </th><td>" + test(data["RC_TYPE"]) + "</td></tr>";
+                        html += "<tr><th>Дата постановки на учет: </th><td>" + test(parseDate(data["DATE_CREATE"])) + "</td></tr>";
+                        var Num = data["PARCEL_CN"].substr(0, data["PARCEL_CN"].lastIndexOf(":"));
+                        html += "<tr><th>Квартал: </th><td>" + test(Num) + "</td></tr>";
+                        Num = Num.substr(0, Num.lastIndexOf(":"));
+                        html += "<tr><th>Район: </th><td>" + test(Num) + "</td></tr>";
+                        Num = Num.substr(0, Num.lastIndexOf(":"));
+                        html += "<tr><th>Округ: </th><td>" + test(Num) + "</td></tr>";
+                        html += "<tr><th>Дата обновления сведений ПКК: </th><td>" + test(parseDate(data["ACTUAL_DATE"])) + "</td></tr>";
+                        html += "<tr><th>Категория: </th><td>" + test(CATEGORY_TYPES[data["CATEGORY_TYPE"]]) + "</td></tr>";
+                        html += "<tr><th>Разрешенное использование </th><td></td></tr>";
+                        html += "<tr><th>По классификатору (код): </th><td>" + test(data["UTIL_CODE"]) + "</td></tr>";
+                        html += "<tr><th>По классификатору (описание): </th><td>" + test(UTILIZATIONS[data["UTIL_CODE"]]) + "</td></tr>";
+                        html += "<tr><th>По документу: </th><td>" + test(data["UTIL_BY_DOC"]) + "</td></tr>";
+                        html += "</table><br>";
+                        html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_information_online?KN=' + data["PARCEL_CN"] + '">Справочная информация об объекте недвижимости</a><br>';
+                        html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_gkn_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ГКН</a><br>';
+                        html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_egrp_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ЕГРП</a><br>';
+                        html += "</div>";
+                        balloonSearch.div.innerHTML = html;
+                        balloonSearch.setVisible(true);
+                        balloonSearch.resize();
+                        balloonSearch.addListener('onClose', function (obj) {
+                            cadastreLayerSearch.setVisible(false);
+                        });
+                    }
+                }).fail(function () {
+                    $('#loader').hide();
+                    $("#alert").show();
                 });
             }
             else if (cadastreNumber.indexOf(":") == -1) {
@@ -471,7 +483,7 @@
                         break;
                 }
                 $("#loader").show();
-                $.getJSON(cadastreServer + 'CadastreNew/Cadastre/MapServer/' + numberKey + '/query?' + 'where=' + encodeURIComponent("PKK_ID like '" + cadastreNumber + "%'"), {
+                $.getJSON(cadastreServer + 'Cadastre/Cadastre/MapServer/' + numberKey + '/query?' + 'where=' + encodeURIComponent("PKK_ID like '" + cadastreNumber + "%'"), {
                     f: 'json',
                     returnGeometry: true,
                     spatialRel: "esriSpatialRelIntersects",
@@ -497,7 +509,7 @@
                                 str += ";";
                             }
                         };
-                        var url = cadastreServer + "CadastreNew/CadastreSelected/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:" + showStr + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&layerDefs=" + str + "&f=image";
+                        var url = cadastreServer + "Cadastre/CadastreSelected/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:" + showStr + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&layerDefs=" + str + "&f=image";
 
                         var getLayerSearch = function () {
                             $("#loader").show();
@@ -543,6 +555,7 @@
                             html += "<tr><th>Макс. Y: </th><td> " + test(findInfo["YMAX"]) + "</td></tr>";
                             html += "<tr><th>Мин. Y: </th><td> " + test(findInfo["YMIN"]) + "</td></tr>";
                             html += "</table><br>";
+                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             html += "</div>";
                             balloonSearch.div.innerHTML = html;
                             balloonSearch.setVisible(true);
@@ -582,10 +595,10 @@
             var mapExtent = map.getVisibleExtent();
             var queryString = "&bbox=" + (gmxAPI.merc_x(mapExtent.minX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.minY) - dy) + "%2C" + (gmxAPI.merc_x(mapExtent.maxX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.maxY) - dy) + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&f=image";
 
-            var tUrl = cadastreServer + "CadastreNew/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
+            var tUrl = cadastreServer + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
 
             if (cbDivision.checked) {
-                var sUrl = cadastreServer + "CadastreNew/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
+                var sUrl = cadastreServer + "Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
                 $("#loader").show();
                 cadastreLayer.setImageExtent({ url: sUrl, extent: mapExtent, noCache: true });
                 cadastreLayer.setCopyright('<a href="http://rosreestr.ru">© Росреестр</a>');
