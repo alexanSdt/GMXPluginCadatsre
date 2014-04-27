@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
 
     function getPolygon(geometry) {
         var poly = [];
@@ -395,7 +395,7 @@
             var cadastreNumber = checkCadastreNumber(value);
             if (~cadastreNumber.indexOf(":")) {
 
-                $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/exts/GknServiceExtension/online/parcel/find', {
+                $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/exts/GKNServiceExtension/online/parcel/find', {
                     crossDomain: true,
                     type: "GET",
                     contentType: "application/json; charset=utf-8",
