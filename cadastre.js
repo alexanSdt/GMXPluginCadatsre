@@ -56,6 +56,7 @@
     var dialog, inputCadNum;
     var geometryRequest = null;
     var fileName = "";
+    var checkCadastre;
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -585,13 +586,13 @@
             inputError(inputCadNum);
     }
 
-    var cadastre = function (container) {
+    var Cadastre = function (container, addInfoTools) {
         cadastreLayerSearch = gmxAPI.map.addObject();
         var map = gmxAPI.map;
         var cadastreLegend;
 
         var fnRefreshMap = function () {
-            cadastreLegend.style.display = (rbNo.checked) ? ('none') : ('');
+            $(cadastreLegend).toggle(!rbNo.checked);
             var mapExtent = map.getVisibleExtent();
             var queryString = "&bbox=" + (gmxAPI.merc_x(mapExtent.minX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.minY) - dy) + "%2C" + (gmxAPI.merc_x(mapExtent.maxX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.maxY) - dy) + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&f=image";
 
@@ -602,7 +603,7 @@
                 $("#loader").show();
                 cadastreLayer.setImageExtent({ url: sUrl, extent: mapExtent, noCache: true });
                 cadastreLayer.setCopyright('<a href="http://rosreestr.ru">© Росреестр</a>');
-                addCadastreInfoTool();
+                addInfoTools && addCadastreInfoTool();
                 gmxAPI._tools.standart.setVisible(true);
             } else {
                 $("#loader").hide();
@@ -828,7 +829,7 @@
         $(alertDiv).append("Ошибка получения данных!");
         _(div, [_table([_tbody(trs)]), cadastreLegend, alertDiv]);
 
-        _(container, [div]);
+        container && _(container, [div]);
 
         this.unloadCadastre = function () {
             $("#loader").hide();
@@ -871,6 +872,11 @@
             gmxAPI._tools.standart.selectTool('move');
             // gmxAPI._tools.standart.removeTool("cadastreInfo");
             // gmxAPI._tools.standart.removeTool("cadastreDx");
+        }
+        
+        this.setCadastreVisibility = function(isVisible) {
+            $(cbDivision).prop('checked', isVisible);
+            fnRefreshMap();
         }
     }
 
@@ -965,34 +971,46 @@
 
     var publicInterface = {
         pluginName: 'Cadastre',
-        afterViewer: function (params) {
-            var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
+        
+        //см. описание параметров ниже
+        afterViewer: function (params, map) {
 
-            var checkCadastre, cadastreMenu = new leftMenu();
+            var cadastreMenu = new leftMenu();
             var unloadCadastre = function () {
                 if (checkCadastre != null) checkCadastre.unloadCadastre();
                 gmxAPI._tools.cadastre.setActiveTool(false);
             }
 
-            params = params || {};
-            cadastreServer = params.proxyUrl || '';
-            cadastreServer += params.cadastreServer || "http://maps.rosreestr.ru/arcgis/rest/services/";
-
-            if (params.dx) dx = params.dx;
-            else dx = 0;
-
-            if (params.dy) dy = params.dy;
-            else dy = 0;
-
-            map = gmxAPI.map || globalFlashMap;
+            params = $.extend({
+                proxyUrl: '',
+                cadastreServer: 'http://maps.rosreestr.ru/arcgis/rest/services/',
+                dx: 0,
+                dy: 0,
+                showToolbar: true,
+                showLeftPanel: true,
+                showStandardTools: true,
+                initCadastre: false
+            }, params);
+            
+            cadastreServer = params.cadastreServer;
+            dx = params.dx;
+            dy = params.dy;
+            
+            map = map || globalFlashMap;
             if (!map) return;
 
             var onClickCadastreTools = function () {
-                var alreadyLoaded = cadastreMenu.createWorkCanvas("cadastre", unloadCadastre);
-                if (!alreadyLoaded) {
-                    checkCadastre = new cadastre(cadastreMenu.workCanvas);
-                    $(cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
+                var container = null;
+                if (params.showLeftPanel) {
+                    var alreadyLoaded = cadastreMenu.createWorkCanvas("cadastre", unloadCadastre);
+                    if (!alreadyLoaded) {
+                        $(cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
+                        container = cadastreMenu.workCanvas;
+                    }
                 }
+                
+                checkCadastre = checkCadastre || new Cadastre(container, params.showStandardTools);
+                
                 extendJQuery();
                 checkCadastre.load();
             };
@@ -1033,10 +1051,39 @@
                 onmouseout: function () { this.style.color = "wheat"; },
                 hint: "Кадастр"
             };
-            cadastreTools.addTool('cadastre', attr);
+            
+            if (params.showToolbar) {
+                var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
+                cadastreTools.addTool('cadastre', attr);
 
-            $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
+                $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
+            }
+            
+            params.initCadastre && onClickCadastreTools();
+        }, 
+        
+        /** Добавить кадастровую информацию на карту
+         * @param {gmxAPI.map} map Карта ГеоМиксера
+         * @param {Object} params Дополнительные параметры
+         * @param {String} [params.proxyUrl] URL для проксирования запросов к серверу кадастра
+         * @param {String} [params.cadastreServer='http://maps.rosreestr.ru/arcgis/rest/services/'] Кадастровый сервер
+         * @param {Number} [params.dx=0] Смещение кадастровой карты по долготе, метры Меркатора
+         * @param {Number} [params.dy=0] Смещение кадастровой карты по широте, метры Меркатора
+         * @param {Boolean} [params.showToolbar=true] Показывать ли тулбар включения кадастровой информации
+         * @param {Boolean} [params.showLeftPanel=true] Показывать ли выбор доп. данных в левой панеле ГеоМиксера
+         * @param {Boolean} [params.showStandardTools=true] Показывать ли инструменты сдвига и информации об участке в панели инструментов
+         * @param {Boolean} [params.initCadastre=false] Начальная видимость кадастровой информации
+        */
+        addToMap: function(map, params) {
+            this.afterViewer(params, map);
         }
+        
+        /** Установить видимость кадастровой информации на карте
+         * @param {Boolean} isVisible Видимость кадастра
+        */
+        setCadastreVisibility: function(isVisible) {
+            checkCadastre && checkCadastre.setCadastreVisibility(isVisible);
+        },
     }
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
