@@ -1076,14 +1076,14 @@
         */
         addToMap: function(map, params) {
             this.afterViewer(params, map);
-        }
+        },
         
         /** Установить видимость кадастровой информации на карте
          * @param {Boolean} isVisible Видимость кадастра
         */
         setCadastreVisibility: function(isVisible) {
             checkCadastre && checkCadastre.setCadastreVisibility(isVisible);
-        },
+        }
     }
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
