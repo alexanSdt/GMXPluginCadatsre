@@ -1009,7 +1009,7 @@
                     }
                 }
                 
-                checkCadastre = checkCadastre || new Cadastre(container, params.showStandardTools);
+                checkCadastre = new Cadastre(container, params.showStandardTools);
                 
                 extendJQuery();
                 checkCadastre.load();
