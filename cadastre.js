@@ -974,13 +974,6 @@
         
         //см. описание параметров ниже
         afterViewer: function (params, map) {
-
-            var cadastreMenu = new leftMenu();
-            var unloadCadastre = function () {
-                if (checkCadastre != null) checkCadastre.unloadCadastre();
-                gmxAPI._tools.cadastre.setActiveTool(false);
-            }
-
             params = $.extend({
                 proxyUrl: '',
                 cadastreServer: 'http://maps.rosreestr.ru/arcgis/rest/services/',
@@ -991,6 +984,12 @@
                 showStandardTools: true,
                 initCadastre: false
             }, params);
+            
+            var cadastreMenu = params.showLeftPanel ? new leftMenu() : null;
+            var unloadCadastre = function () {
+                if (checkCadastre != null) checkCadastre.unloadCadastre();
+                gmxAPI._tools.cadastre.setActiveTool(false);
+            }            
             
             cadastreServer = params.cadastreServer;
             dx = params.dx;
