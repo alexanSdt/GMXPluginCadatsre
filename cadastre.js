@@ -1,5 +1,14 @@
 ﻿(function () {
 
+    _translationsHash.addtext("rus", { cadastrePlugin: {
+        doSearch: 'Найти'
+    }});
+
+    _translationsHash.addtext("eng", { cadastrePlugin: {
+        doSearch: 'Search'
+    }});
+
+
     function getPolygon(geometry) {
         var poly = [];
         geometry.forEach(function (value) {
@@ -57,6 +66,7 @@
     var geometryRequest = null;
     var fileName = "";
     var checkCadastre;
+    var gParams = null;
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -695,7 +705,7 @@
             }
         }
 
-        var goButton = makeButton(_gtxt("Найти")),
+        var goButton = makeButton(_gtxt('cadastrePlugin.doSearch')),
             _this = this;
 
         goButton.onclick = function () { cadastreSearch(map, inputField.value); }
@@ -974,7 +984,7 @@
         
         //см. описание параметров ниже
         afterViewer: function (params, map) {
-            params = $.extend({
+            gParams = $.extend({
                 proxyUrl: '',
                 cadastreServer: 'http://maps.rosreestr.ru/arcgis/rest/services/',
                 dx: 0,
@@ -985,37 +995,18 @@
                 initCadastre: false
             }, params);
             
-            var cadastreMenu = params.showLeftPanel ? new leftMenu() : null;
-            var unloadCadastre = function () {
-                if (checkCadastre != null) checkCadastre.unloadCadastre();
-                gmxAPI._tools.cadastre.setActiveTool(false);
-            }            
+            var cadastreMenu = this._cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null,
+                _this = this;
             
-            cadastreServer = params.cadastreServer;
-            dx = params.dx;
-            dy = params.dy;
+            cadastreServer = gParams.cadastreServer;
+            dx = gParams.dx;
+            dy = gParams.dy;
             
             map = map || globalFlashMap;
             if (!map) return;
 
-            var onClickCadastreTools = function () {
-                var container = null;
-                if (params.showLeftPanel) {
-                    var alreadyLoaded = cadastreMenu.createWorkCanvas("cadastre", unloadCadastre);
-                    if (!alreadyLoaded) {
-                        $(cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
-                        container = cadastreMenu.workCanvas;
-                    }
-                }
-                
-                checkCadastre = new Cadastre(container, params.showStandardTools);
-                
-                extendJQuery();
-                checkCadastre.load();
-            };
-
             var onCancelCadastreTools = function () {
-                unloadCadastre();
+                _this._unloadCadastre();
                 $("loader").hide();
                 if (cadastreLayerInfo)
                     cadastreLayerInfo.setVisible(false);
@@ -1044,22 +1035,43 @@
                 rus: "Кадастр",
                 eng: "Cadastre",
                 overlay: true,
-                onClick: onClickCadastreTools,
+                onClick: this._onClickCadastreTools.bind(this),
                 onCancel: onCancelCadastreTools,
                 onmouseover: function () { this.style.color = "orange"; },
                 onmouseout: function () { this.style.color = "wheat"; },
                 hint: "Кадастр"
             };
             
-            if (params.showToolbar) {
+            if (gParams.showToolbar) {
                 var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
-                cadastreTools.addTool('cadastre', attr);
+                this._cadastreTool = cadastreTools.addTool('cadastre', attr);
 
                 $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
             }
             
-            params.initCadastre && onClickCadastreTools();
+            gParams.initCadastre && this._onClickCadastreTools();
         }, 
+        
+        _unloadCadastre: function () {
+                if (checkCadastre != null) checkCadastre.unloadCadastre();
+                gmxAPI._tools.cadastre.setActiveTool(false);
+        },
+
+        _onClickCadastreTools: function () {
+            var container = null;
+            if (gParams.showLeftPanel) {
+                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", this._unloadCadastre);
+                if (!alreadyLoaded) {
+                    $(this._cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
+                    container = this._cadastreMenu.workCanvas;
+                }
+            }
+            
+            checkCadastre = new Cadastre(container, gParams.showStandardTools);
+            
+            extendJQuery();
+            checkCadastre.load();
+        },
         
         /** Добавить кадастровую информацию на карту
          * @param {gmxAPI.map} map Карта ГеоМиксера
@@ -1081,7 +1093,15 @@
          * @param {Boolean} isVisible Видимость кадастра
         */
         setCadastreVisibility: function(isVisible) {
-            checkCadastre && checkCadastre.setCadastreVisibility(isVisible);
+            if (checkCadastre) {
+                checkCadastre.setCadastreVisibility(isVisible);
+            } else if (isVisible) {
+                if (this._cadastreTool) {
+                    this._cadastreTool.setActiveTool(true);
+                } else {
+                    this._onClickCadastreTools();
+                }
+            }
         }
     }
 
