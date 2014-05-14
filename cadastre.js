@@ -1054,7 +1054,7 @@
         
         _unloadCadastre: function () {
                 if (checkCadastre != null) checkCadastre.unloadCadastre();
-                gmxAPI._tools.cadastre.setActiveTool(false);
+                //gmxAPI._tools.cadastre.setActiveTool(false);
         },
 
         _onClickCadastreTools: function () {
