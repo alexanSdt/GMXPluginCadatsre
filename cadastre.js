@@ -489,12 +489,12 @@
                         layerId = [9, 10, 11, 12, 13, 14];
                         break;
                     case 11:
-                        numberKey = 12;
+                        numberKey = 8;
                         layerId = [6, 7, 8];
                         break;
                 }
                 $("#loader").show();
-                $.getJSON(cadastreServer + 'Cadastre/Cadastre/MapServer/' + numberKey + '/query?' + 'where=' + encodeURIComponent("PKK_ID like '" + cadastreNumber + "%'"), {
+                $.getJSON(cadastreServer + 'Cadastre/CadastreSelected/MapServer/' + numberKey + '/query?' + 'where=' + encodeURIComponent("PKK_ID like '" + cadastreNumber + "%'"), {
                     f: 'json',
                     returnGeometry: true,
                     spatialRel: "esriSpatialRelIntersects",
@@ -1020,7 +1020,7 @@
                 if (mapListenerInfo)
                     gmxAPI.map.removeListener("onClick", mapListenerInfo);
                 if (cadastreMenu)
-                    cadastreMenu.parentWorkCanvas.remove();
+                    $(cadastreMenu.parentWorkCanvas).remove();
                 if (balloonSearch) {
                     balloonSearch.remove();
                     balloonSearch = false;
