@@ -1006,7 +1006,9 @@
             if (!map) return;
 
             var onCancelCadastreTools = function () {
-                _this._unloadCadastre();
+                if (checkCadastre != null) {
+                    checkCadastre.unloadCadastre();
+                }
                 $("loader").hide();
                 if (cadastreLayerInfo)
                     cadastreLayerInfo.setVisible(false);
@@ -1050,17 +1052,17 @@
             }
             
             gParams.initCadastre && this._onClickCadastreTools();
-        }, 
-        
-        _unloadCadastre: function () {
-                if (checkCadastre != null) checkCadastre.unloadCadastre();
-                //gmxAPI._tools.cadastre.setActiveTool(false);
         },
 
         _onClickCadastreTools: function () {
             var container = null;
             if (gParams.showLeftPanel) {
-                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", this._unloadCadastre);
+                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", function() {
+                    if (checkCadastre != null) {
+                        checkCadastre.unloadCadastre();
+                    }
+                    gmxAPI._tools.cadastre.setActiveTool(false);
+                });
                 if (!alreadyLoaded) {
                     $(this._cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
                     container = this._cadastreMenu.workCanvas;
