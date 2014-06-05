@@ -62,6 +62,7 @@
     var balloonInfo, balloonSearch; // balloon для идентификации и поиска кадастрового участка на карте
     var cadastreLayerInfo, cadastreLayerSearch, cadastreLayer;
     var cadastreServer;
+    var cadastreServerThematic;
     var dialog, inputCadNum;
     var geometryRequest = null;
     var fileName = "";
@@ -606,7 +607,7 @@
             var mapExtent = map.getVisibleExtent();
             var queryString = "&bbox=" + (gmxAPI.merc_x(mapExtent.minX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.minY) - dy) + "%2C" + (gmxAPI.merc_x(mapExtent.maxX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.maxY) - dy) + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&f=image";
 
-            var tUrl = cadastreServer + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
+            var tUrl = cadastreServerThematic + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
 
             if (cbDivision.checked) {
                 var sUrl = cadastreServer + "Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
@@ -999,6 +1000,7 @@
                 _this = this;
             
             cadastreServer = gParams.cadastreServer;
+            cadastreServerThematic = 'http://maps.rosreestr.ru/ags/rest/services/';
             dx = gParams.dx;
             dy = gParams.dy;
             
