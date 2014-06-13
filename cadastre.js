@@ -1,18 +1,126 @@
 ﻿(function () {
 
-    _translationsHash.addtext("rus", { cadastrePlugin: {
-        doSearch: 'Найти'
-    }});
+    var STR_PAD_LEFT = 1;
+    var STR_PAD_RIGHT = 2;
+    var STR_PAD_BOTH = 3;
 
-    _translationsHash.addtext("eng", { cadastrePlugin: {
-        doSearch: 'Search'
-    }});
+    function strpad(str, len, pad, dir) {
+        if (typeof (len) == "undefined") { var len = 0; }
+        if (typeof (pad) == "undefined") { var pad = ' '; }
+        if (typeof (dir) == "undefined") { var dir = STR_PAD_RIGHT; }
+        if (len + 1 >= str.length) {
+            switch (dir) {
+                case STR_PAD_LEFT:
+                    str = Array(len + 1 - str.length).join(pad) + str;
+                    break;
+                case STR_PAD_BOTH:
+                    var right = Math.ceil((padlen = len - str.length) / 2);
+                    var left = padlen - right;
+                    str = Array(left + 1).join(pad) + str + Array(right + 1).join(pad);
+                    break;
+                default:
+                    str = str + Array(len + 1 - str.length).join(pad);
+                    break;
+            }
+        }
+        return str;
+    };
+
+    String.prototype.paddingLeft = function (paddingValue) {
+        return String(paddingValue + this).slice(-paddingValue.length);
+    };
+
+    var CadastreTypes = {
+        okrug: {
+            fieldId: "PKK_ID",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/4",
+            title: "Кадастровый округ"
+        },
+        kvartal: {
+            fieldId: "PKK_ID",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/2",
+            title: "Кадастровый квартал"
+        },
+        rayon: {
+            fieldId: "PKK_ID",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/3",
+            title: "Кадастровый район"
+        },
+        parcel: {
+            fieldId: "PARCEL_ID",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/exts/GKNServiceExtension/online/parcel/find",
+            title: "Parcel"
+        },
+        oks: {
+            fieldId: "PKK_ID",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/0",
+            title: "Oks"
+        }
+    };
+
+    var getCadastreType = function (cadastreNumber) {
+        var cadParts = cadastreNumber.split(":");
+
+        switch (cadParts.length) {
+            case 1:
+                return CadastreTypes.okrug;
+            case 2:
+                if (cadParts[1].length > 2)
+                    return CadastreTypes.kvartal;
+                else
+                    return CadastreTypes.rayon;
+            case 3:
+                if (cadParts[1].length > 2)
+                    return CadastreTypes.parcel;
+                else
+                    return CadastreTypes.kvartal;
+            case 4:
+                return CadastreTypes.parcel;
+            case 5:
+                return CadastreTypes.oks;
+        }
+    };
+
+    var CADASTRE_NUMBER_PARTS_LENGTH = [2, 2, 7, 5, 5];
+
+    var normalizeSearchCadastreNumber = function (number) {
+        var numberParts = number.split(":");
+        number = '';
+        for (var i = 0; i < numberParts.length; i++) {
+            if (numberParts[i] != '*') {
+                numberParts[i] = strpad(numberParts[i], CADASTRE_NUMBER_PARTS_LENGTH[i], "0", STR_PAD_LEFT);//numberParts[i].pad('0', CADASTRE_NUMBER_PARTS_LENGTH[i]);
+                number += numberParts[i];
+            }
+        }
+        return number;
+    };
+
+    var checkCadastreNumber = function (number) {
+        var cadParts = number.split(":");
+        if (cadParts[0].length <= 2 && isNumber(cadParts[0]))
+            return true;
+        else
+            return false;
+    }
+
+    _translationsHash.addtext("rus", {
+        cadastrePlugin: {
+            doSearch: 'Найти'
+        }
+    });
+
+    _translationsHash.addtext("eng", {
+        cadastrePlugin: {
+            doSearch: 'Search'
+        }
+    });
 
 
     function getPolygon(geometry) {
         var poly = [];
         geometry.forEach(function (value) {
-            poly.push([gmxAPI.from_merc_x(gmxAPI.merc_x(value[0]) - parseFloat(dx).toFixed(2) * (-1)), gmxAPI.from_merc_y(gmxAPI.merc_y(value[1]) - parseFloat(dy).toFixed(2) * (-1))]);
+            poly.push([gmxAPI.from_merc_x(gmxAPI.merc_x(value[0]) - parseFloat(dx).toFixed(2) * (-1)),
+                gmxAPI.from_merc_y(gmxAPI.merc_y(value[1]) - parseFloat(dy).toFixed(2) * (-1))]);
         });
         return poly;
     }
@@ -299,24 +407,9 @@
                 balloonInfo.setVisible(true);
                 balloonInfo.visible = true;
                 balloonInfo.div.innerHTML = html;
-                cadastreLayerInfo = gmxAPI.map.addObject();
-                var geom;
-                var geo = [];
-                if (geometry.length > 1) {
-                    for (var i = 0; i < geometry.length; i++) {
-                        geo.push(getPolygon(geometry[i]));
-                    }
-                    geom = {
-                        "type": "MULTIPOLYGON",
-                        "coordinates": [geo]
-                    };
-                } else {
-                    geom = {
-                        "type": "POLYGON",
-                        "coordinates": [getPolygon(geometry[0])]
-                    };
-                }
-                cadastreLayerInfo.setGeometry(geom);
+
+                var geom = getGeometry(geometry);
+                showGeometry(geom);
 
                 $(".getGeom").click(function () {
                     var result = JSON.stringify([{
@@ -332,17 +425,6 @@
                     });
                 });
 
-                cadastreLayerInfo.setStyle({
-                    outline: {
-                        color: "#FF9B18",
-                        thickness: 3,
-                        opacity: 100
-                    },
-                    fill: {
-                        color: 0xffffff,
-                        opacity: 0.0
-                    }
-                });
             } else {
                 $("#loader").hide();
                 $("#alert").show();
@@ -403,11 +485,12 @@
     }
 
     var cadastreSearch = function (map, value) {
-        if (value != '') {
-            var cadastreNumber = checkCadastreNumber(value);
-            if (~cadastreNumber.indexOf(":")) {
-
-                $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/exts/GKNServiceExtension/online/parcel/find', {
+        if (checkCadastreNumber(value)) {
+            var cadType = getCadastreType(value);
+            $('#loader').show();
+            $("#alert").hide();
+            if (cadType == CadastreTypes.parcel) {
+                $.ajax(cadType.layerUrl, {
                     crossDomain: true,
                     type: "GET",
                     contentType: "application/json; charset=utf-8",
@@ -415,14 +498,10 @@
                     dataType: "jsonp",
                     jsonpCallback: 'fnsuccesscallback',
                     data: {
-                        cadNum: cadastreNumber,//61:6:10104:2 66:41:0402004:16
+                        cadNum: value,
                         onlyAttributes: 'false',
                         returnGeometry: 'true',
                         f: 'json'
-                    },
-                    beforeSend: function () {
-                        $('#loader').show();
-                        $("#alert").hide();
                     }
                 }).done(function (data) {
                     $('#loader').hide();
@@ -477,125 +556,128 @@
                     $('#loader').hide();
                     $("#alert").show();
                 });
-            }
-            else if (cadastreNumber.indexOf(":") == -1) {
-                var numberKey, layerId = [];
-                switch (cadastreNumber.length) {
-                    case 2:
-                        numberKey = 1;
-                        layerId = [16, 17, 18, 19, 20];
-                        break;
-                    case 4:
-                        numberKey = 7;
-                        layerId = [9, 10, 11, 12, 13, 14];
-                        break;
-                    case 11:
-                        numberKey = 8;
-                        layerId = [6, 7, 8];
-                        break;
-                }
-                $("#loader").show();
-                $.getJSON(cadastreServer + 'Cadastre/CadastreSelected/MapServer/' + numberKey + '/query?' + 'where=' + encodeURIComponent("PKK_ID like '" + cadastreNumber + "%'"), {
+            } else {
+                var cadastreNumber = normalizeSearchCadastreNumber(value);
+                $.getJSON(cadType.layerUrl + '/query?' + 'where=' + encodeURIComponent(cadType.fieldId + " like '" + cadastreNumber + "%'"), {
                     f: 'json',
                     returnGeometry: true,
                     spatialRel: "esriSpatialRelIntersects",
-                    outFields: "*"
-                }, function (data) {
-                    $("#loader").hide();
-                    if (!($.isEmptyObject(data.features[0]))) {
-                        var findInfo = data.features[0].attributes;
+                    outFields: "*",
+                    outSR: '4326'
+                }).done(function (data) {
+                    $('#loader').hide();
 
-                        var x = converting(data.features[0].attributes.XC, "x"), y = converting(data.features[0].attributes.YC, "y"), maxX = converting(data.features[0].attributes.XMAX, "x"), minX = converting(data.features[0].attributes.XMIN, "x"), maxY = converting(data.features[0].attributes.YMAX, "y"), minY = converting(data.features[0].attributes.YMIN, "y");
-                        map.zoomToExtent(minX, minY, maxX, maxY);
+                    if (balloonInfo)
+                        balloonInfo.setVisible(false);
 
-                        var parcelId = data.features[0].attributes.PKK_ID;
-                        if (parcelId == null)
-                            parcelId = '%20';
+                    if (cadastreLayerInfo)
+                        cadastreLayerInfo.setVisible(false);
 
-                        var str = "", showStr = "";
-                        for (var i = 0; i < layerId.length; i++) {
-                            str += layerId[i] + ":PKK_ID LIKE '" + parcelId + "'";
-                            showStr += layerId[i];
-                            if (i != layerId.length - 1) {
-                                showStr += ",";
-                                str += ";";
-                            }
-                        };
-                        var url = cadastreServer + "Cadastre/CadastreSelected/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:" + showStr + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&layerDefs=" + str + "&f=image";
+                    if (balloonSearch)
+                        balloonSearch.setVisible(false);
 
-                        var getLayerSearch = function () {
-                            $("#loader").show();
-                            var extent = map.getVisibleExtent();
-                            var bboxUrl = "&bbox=" + (gmxAPI.merc_x(extent.minX) - centralMeridian - dx) + "," + (gmxAPI.merc_y(extent.minY) - dy) + "," + (gmxAPI.merc_x(extent.maxX) - centralMeridian - dx) + "," + (gmxAPI.merc_y(extent.maxY) - dy);
-                            cadastreLayerSearch.setImageExtent({ url: url + bboxUrl, extent: extent, noCache: true });
-                            cadastreLayerSearch.addListener('onImageLoad', function (ev) {
-                                $("#loader").hide();
-                                $("#alert").hide();
-                            });
-                            cadastreLayerSearch.addListener('onImageError', function (ev) {
-                                $("#loader").hide();
-                                $("#alert").show();
-                            });
-                        }
+                    if (cadastreLayerSearch)
+                        cadastreLayerSearch.setVisible(false);
 
-                        setTimeout(function () {
-                            if (balloonInfo)
-                                balloonInfo.setVisible(false);
-                            if (cadastreLayerInfo)
-                                cadastreLayerInfo.setVisible(false);
+                    var geom = getGeometry(data.features[0].geometry.rings);
+                    showGeometry(geom);
 
-                            if (balloonSearch)
-                                balloonSearch.setVisible(false);
-                            if (cadastreLayerSearch)
-                                cadastreLayerSearch.setVisible(false);
+                    var findInfo = data.features[0].attributes;
 
-                            var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
-                            balloonSearch = map.addBalloon();
-                            balloonSearch.setPoint(converting(findInfo["XC"], "x"), converting(findInfo["YC"], "y"));
-                            balloonSearch.setVisible(false);
-                            html += "<h3>" + "Кадастровый номер  " + test(findInfo["CAD_NUM"]) + "</h3><br><div><table style='text-align:left'>";
-                            html += "<tr><th>Дата обновления сведений ПКК: </th><td> " + test(parseDate(findInfo["ACTUAL_DATE"])) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер: </th><td> " + test(findInfo["CAD_NUM"]) + "</td></tr>";
-                            html += "<tr><th>Имя: </th><td> " + test(findInfo["NAME"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор объекта: </th><td> " + test(findInfo["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор ПКК: </th><td> " + test(findInfo["PKK_ID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ региона: </th><td> " + test(findInfo["REGION_KEY"]) + "</td></tr>";
-                            html += "<tr><th>X центра: </th><td> " + test(findInfo["XC"]) + "</td></tr>";
-                            html += "<tr><th>Y центра: </th><td> " + test(findInfo["YC"]) + "</td></tr>";
-                            html += "<tr><th>Макс. X: </th><td> " + test(findInfo["XMAX"]) + "</td></tr>";
-                            html += "<tr><th>Мин. X: </th><td> " + test(findInfo["XMIN"]) + "</td></tr>";
-                            html += "<tr><th>Макс. Y: </th><td> " + test(findInfo["YMAX"]) + "</td></tr>";
-                            html += "<tr><th>Мин. Y: </th><td> " + test(findInfo["YMIN"]) + "</td></tr>";
-                            html += "</table><br>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
-                            html += "</div>";
-                            balloonSearch.div.innerHTML = html;
-                            balloonSearch.setVisible(true);
-                            balloonSearch.resize();
-                            cadastreLayerSearch.setVisible(true);
-                            balloonSearch.addListener('onClose', function (obj) {
-                                cadastreLayerSearch.setVisible(false);
-                            });
-                            getLayerSearch();
-                        }, 500);
+                    var x = converting(data.features[0].attributes.XC, "x"),
+                        y = converting(data.features[0].attributes.YC, "y"),
+                        maxX = converting(data.features[0].attributes.XMAX, "x"),
+                        minX = converting(data.features[0].attributes.XMIN, "x"),
+                        maxY = converting(data.features[0].attributes.YMAX, "y"),
+                        minY = converting(data.features[0].attributes.YMIN, "y");
 
-                        if (!cadastreLayerSearchListener) {
-                            cadastreLayerSearchListener = gmxAPI.map.addListener("onMoveEnd", getLayerSearch);
-                            cadastreLayerSearch.setVisible(true);
-                        } else {
-                            map.removeListener("onMoveEnd", cadastreLayerSearchListener);
-                            cadastreLayerSearchListener = gmxAPI.map.addListener("onMoveEnd", getLayerSearch);
-                            cadastreLayerSearch.setVisible(true);
-                        }
-                    }
+                    map.zoomToExtent(minX, minY, maxX, maxY);
+
+                    var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
+                    balloonSearch = map.addBalloon();
+                    balloonSearch.setPoint(converting(findInfo["XC"], "x"), converting(findInfo["YC"], "y"));
+                    balloonSearch.setVisible(false);
+                    html += "<h3>" + "Кадастровый номер  " + test(findInfo["CAD_NUM"]) + "</h3><br><div><table style='text-align:left'>";
+                    html += "<tr><th>Дата обновления сведений ПКК: </th><td> " + test(parseDate(findInfo["ACTUAL_DATE"])) + "</td></tr>";
+                    html += "<tr><th>Кадастровый номер: </th><td> " + test(findInfo["CAD_NUM"]) + "</td></tr>";
+                    html += "<tr><th>Имя: </th><td> " + test(findInfo["NAME"]) + "</td></tr>";
+                    html += "<tr><th>Идентификатор объекта: </th><td> " + test(findInfo["OBJECTID"]) + "</td></tr>";
+                    html += "<tr><th>Идентификатор ПКК: </th><td> " + test(findInfo["PKK_ID"]) + "</td></tr>";
+                    html += "<tr><th>Ключ региона: </th><td> " + test(findInfo["REGION_KEY"]) + "</td></tr>";
+                    html += "<tr><th>X центра: </th><td> " + test(findInfo["XC"]) + "</td></tr>";
+                    html += "<tr><th>Y центра: </th><td> " + test(findInfo["YC"]) + "</td></tr>";
+                    html += "<tr><th>Макс. X: </th><td> " + test(findInfo["XMAX"]) + "</td></tr>";
+                    html += "<tr><th>Мин. X: </th><td> " + test(findInfo["XMIN"]) + "</td></tr>";
+                    html += "<tr><th>Макс. Y: </th><td> " + test(findInfo["YMAX"]) + "</td></tr>";
+                    html += "<tr><th>Мин. Y: </th><td> " + test(findInfo["YMIN"]) + "</td></tr>";
+                    html += "</table><br>";
+                    html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
+                    html += "</div>";
+                    balloonSearch.div.innerHTML = html;
+                    balloonSearch.setVisible(true);
+                    balloonSearch.resize();
+                    cadastreLayerSearch.setVisible(true);
+                    balloonSearch.addListener('onClose', function (obj) {
+                        cadastreLayerSearch.setVisible(false);
+                    });
+
+                    $(".getGeom").click(function () {
+                        var result = JSON.stringify([{
+                            "properties": { "isVisible": true, "text": "" },
+                            "geometry": geom
+                        }]);
+                        sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
+                            name: cadastreNumber,
+                            format: "Shape",
+                            points: '',
+                            lines: '',
+                            polygons: result
+                        });
+                    });
+
+                }).fail(function () {
+                    $('#loader').hide();
+                    $("#alert").show();
                 });
             }
-            else
-                console.log("Кадастровый номер не валиден");
         }
-        else
-            inputError(inputCadNum);
-    }
+    };
+
+    var getGeometry = function (arcgisGeometry) {
+        var geom;
+        var geo = [];
+        if (arcgisGeometry.length > 1) {
+            for (var i = 0; i < arcgisGeometry.length; i++) {
+                geo.push(getPolygon(arcgisGeometry[i]));
+            }
+            geom = {
+                "type": "MULTIPOLYGON",
+                "coordinates": [geo]
+            };
+        } else {
+            geom = {
+                "type": "POLYGON",
+                "coordinates": [getPolygon(arcgisGeometry[0])]
+            };
+        }
+        return geom;
+    };
+
+    var showGeometry = function (geom) {
+        cadastreLayerInfo = gmxAPI.map.addObject();
+        cadastreLayerInfo.setGeometry(geom);
+        cadastreLayerInfo.setStyle({
+            outline: {
+                color: "#FF9B18",
+                thickness: 3,
+                opacity: 100
+            },
+            fill: {
+                color: 0xffffff,
+                opacity: 0.0
+            }
+        });
+    };
 
     var Cadastre = function (container, addInfoTools) {
         cadastreLayerSearch = gmxAPI.map.addObject();
@@ -884,8 +966,8 @@
             // gmxAPI._tools.standart.removeTool("cadastreInfo");
             // gmxAPI._tools.standart.removeTool("cadastreDx");
         }
-        
-        this.setCadastreVisibility = function(isVisible) {
+
+        this.setCadastreVisibility = function (isVisible) {
             $(cbDivision).prop('checked', isVisible);
             fnRefreshMap();
         }
@@ -982,7 +1064,7 @@
 
     var publicInterface = {
         pluginName: 'Cadastre',
-        
+
         //см. описание параметров ниже
         afterViewer: function (params, map) {
             gParams = $.extend({
@@ -995,15 +1077,15 @@
                 showStandardTools: true,
                 initCadastre: false
             }, params);
-            
+
             var cadastreMenu = this._cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null,
                 _this = this;
-            
+
             cadastreServer = gParams.cadastreServer;
             cadastreServerThematic = 'http://maps.rosreestr.ru/ags/rest/services/';
             dx = gParams.dx;
             dy = gParams.dy;
-            
+
             map = map || globalFlashMap;
             if (!map) return;
 
@@ -1045,21 +1127,21 @@
                 onmouseout: function () { this.style.color = "wheat"; },
                 hint: "Кадастр"
             };
-            
+
             if (gParams.showToolbar) {
                 var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
                 this._cadastreTool = cadastreTools.addTool('cadastre', attr);
 
                 $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
             }
-            
+
             gParams.initCadastre && this._onClickCadastreTools();
         },
 
         _onClickCadastreTools: function () {
             var container = null;
             if (gParams.showLeftPanel) {
-                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", function() {
+                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", function () {
                     if (checkCadastre != null) {
                         checkCadastre.unloadCadastre();
                     }
@@ -1070,18 +1152,18 @@
                     container = this._cadastreMenu.workCanvas;
                 }
             }
-            
+
             checkCadastre = new Cadastre(container, gParams.showStandardTools);
-            
+
             extendJQuery();
             checkCadastre.load();
         },
-        
+
         /** Добавить кадастровую информацию на карту
          * @param {gmxAPI.map} map Карта ГеоМиксера
          * @param {Object} params Дополнительные параметры
          * @param {String} [params.proxyUrl] URL для проксирования запросов к серверу кадастра
-         * @param {String} [params.cadastreServer='http://maps.rosreestr.ru/arcgis/rest/services/'] Кадастровый сервер
+         * @param {String} [params.cadastreServer='http://maps.rosreestr.ru/ags/rest/services/'] Кадастровый сервер
          * @param {Number} [params.dx=0] Смещение кадастровой карты по долготе, метры Меркатора
          * @param {Number} [params.dy=0] Смещение кадастровой карты по широте, метры Меркатора
          * @param {Boolean} [params.showToolbar=true] Показывать ли тулбар включения кадастровой информации
@@ -1089,14 +1171,14 @@
          * @param {Boolean} [params.showStandardTools=true] Показывать ли инструменты сдвига и информации об участке в панели инструментов
          * @param {Boolean} [params.initCadastre=false] Начальная видимость кадастровой информации
         */
-        addToMap: function(map, params) {
+        addToMap: function (map, params) {
             this.afterViewer(params, map);
         },
-        
+
         /** Установить видимость кадастровой информации на карте
          * @param {Boolean} isVisible Видимость кадастра
         */
-        setCadastreVisibility: function(isVisible) {
+        setCadastreVisibility: function (isVisible) {
             if (checkCadastre) {
                 checkCadastre.setCadastreVisibility(isVisible);
             } else if (isVisible) {
