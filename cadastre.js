@@ -374,6 +374,7 @@
                             html += "</table></div>";
                             html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
                             break;
+                        case 2:
                         case 1:
                             html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo'style='text-align:left'>";
                             html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
