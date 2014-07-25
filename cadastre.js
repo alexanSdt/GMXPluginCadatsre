@@ -125,6 +125,15 @@
         return poly;
     }
 
+    function getPolygon_merc2wgs(geometry) {
+        var poly = [];
+        geometry.forEach(function (value) {
+            poly.push([from_merc_x(value[0] - parseFloat(dx).toFixed(2) * (-1)),
+                from_merc_y(value[1] - parseFloat(dy).toFixed(2) * (-1))]);
+        });
+        return poly;
+    }
+
     var extendJQuery;
     extendJQuery = function () {
         $('input.inputStyle').each(function () {
@@ -217,6 +226,24 @@
         return parseString;
     }
 
+    var POLE = 20037508.34;
+
+    function merc_x(lon) {
+        return lon * POLE / 180;
+    };
+
+    function merc_y(lat) {
+        return Math.log(Math.tan((90 + lat) * Math.PI / 360)) / Math.PI * POLE;
+    };
+
+    function from_merc_x(x) {
+        return 180 * x / POLE;
+    };
+
+    function from_merc_y(y) {
+        return 180 / Math.PI * (2 * Math.atan(Math.exp((y / POLE) * Math.PI)) - Math.PI / 2);
+    };
+
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
             geometryRequest.abort();
@@ -235,8 +262,8 @@
         mousePosY = gmxAPI.merc_y(mousePosY);
         balloonInfo.setVisible(false);
         var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
-        var geoX = gmxAPI.from_merc_x(mousePosX - parseFloat(dx).toFixed(2));
-        var geoY = gmxAPI.from_merc_y(mousePosY - parseFloat(dy).toFixed(2));
+        var geoX = merc_x(gmxAPI.from_merc_x(mousePosX - parseFloat(dx).toFixed(2)));
+        var geoY = merc_y(gmxAPI.from_merc_y(mousePosY - parseFloat(dy).toFixed(2)));
 
         var geometry = "";
         $("#loader").show();
@@ -250,13 +277,13 @@
             jsonpCallback: 'fnsuccesscallback',
             data: {
                 f: 'json',
-                geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":4326}}',
+                geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":102100}}',
                 tolerance: '0',
                 returnGeometry: 'true',
-                mapExtent: '{"xmin":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.minX) - parseFloat(dx).toFixed(2)) + ',"ymin":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.minY) - parseFloat(dy).toFixed(2)) + ',"xmax":' + gmxAPI.from_merc_x(gmxAPI.merc_x(extent.maxX) - parseFloat(dx).toFixed(2)) + ',"ymax":' + gmxAPI.from_merc_y(gmxAPI.merc_y(extent.maxY) - parseFloat(dy).toFixed(2)) + ',"spatialReference":{"wkid":4326}}',
+                mapExtent: '{"xmin":' + (merc_x(extent.minX) - parseFloat(dx).toFixed(2)) + ',"ymin":' + (merc_y(extent.minY) - parseFloat(dy).toFixed(2)) + ',"xmax":' + (merc_x(extent.maxX) - parseFloat(dx).toFixed(2)) + ',"ymax":' + (merc_y(extent.maxY) - parseFloat(dy).toFixed(2)) + ',"spatialReference":{"wkid":102100}}',
                 imageDisplay: map.width() + ',' + getHeight() + ',96',
                 geometryType: 'esriGeometryPoint',
-                sr: '4326',
+                sr: '102100',
                 layers: layerId || 'top' //top or all or layerId
             }
         }).done(function (data) {
@@ -409,7 +436,8 @@
                 balloonInfo.visible = true;
                 balloonInfo.div.innerHTML = html;
 
-                var geom = getGeometry(geometry);
+                var geom = getGeometry_merc2wgs(geometry);
+
                 showGeometry(geom);
 
                 $(".getGeom").click(function () {
@@ -659,6 +687,26 @@
             geom = {
                 "type": "POLYGON",
                 "coordinates": [getPolygon(arcgisGeometry[0])]
+            };
+        }
+        return geom;
+    };
+
+    var getGeometry_merc2wgs = function (arcgisGeometry) {
+        var geom;
+        var geo = [];
+        if (arcgisGeometry.length > 1) {
+            for (var i = 0; i < arcgisGeometry.length; i++) {
+                geo.push(getPolygon_merc2wgs(arcgisGeometry[i]));
+            }
+            geom = {
+                "type": "MULTIPOLYGON",
+                "coordinates": [geo]
+            };
+        } else {
+            geom = {
+                "type": "POLYGON",
+                "coordinates": [getPolygon_merc2wgs(arcgisGeometry[0])]
             };
         }
         return geom;
