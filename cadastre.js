@@ -1190,14 +1190,16 @@
         _onClickCadastreTools: function () {
             var container = null;
             if (gParams.showLeftPanel) {
-                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", function () {
-                    if (checkCadastre != null) {
-                        checkCadastre.unloadCadastre();
-                    }
-                    gmxAPI._tools.cadastre.setActiveTool(false);
+                var alreadyLoaded = this._cadastreMenu.createWorkCanvas("cadastre", {
+                    closeFunc: function () {
+                        if (checkCadastre != null) {
+                            checkCadastre.unloadCadastre();
+                        }
+                        gmxAPI._tools.cadastre.setActiveTool(false);
+                    },
+                    path: ["Кадастровые данные"]
                 });
                 if (!alreadyLoaded) {
-                    $(this._cadastreMenu.parentWorkCanvas).find(".leftTitle table tbody tr").append("Кадастровые данные");
                     container = this._cadastreMenu.workCanvas;
                 }
             }
