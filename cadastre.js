@@ -449,7 +449,7 @@
     };
 
     function formatDate(d, m, y) {
-        return strpad(d, 2, '0', STR_PAD_LEFT) + '.' + strpad(m, 2, '0', STR_PAD_LEFT) + '.' + strpad(y, 4, '0', STR_PAD_LEFT);
+        return strpad(d.toString(), 2, '0', STR_PAD_LEFT) + '.' + strpad(m.toString(), 2, '0', STR_PAD_LEFT) + '.' + strpad(y.toString(), 4, '0', STR_PAD_LEFT);
     }
 
     function buildCadastreInfoWindowContent(feature) {
