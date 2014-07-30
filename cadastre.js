@@ -1,5 +1,606 @@
 ﻿(function () {
 
+    var OBJECT_TYPE_FULL_NAMES = ["Кадастровый округ", "Кадастровый район", "Кадастровый квартал", "Земельный участок", "ОКС"];
+
+    var OKS_TYPES = {
+        " ": "",
+        building: "здание",
+        construction: "сооружение",
+        flat: "квартира"
+    };
+
+    var FIELDS = {
+        address: "OBJECT_ADDRESS",
+        addressId: "FULLADDRESSID",
+        addressName: "NAME",
+        area: "AREA_VALUE",
+        areaType: "AREA_TYPE",
+        areaUnit: "AREA_UNIT",
+        atdId: "BS_ID",
+        borderName: "BS_NAME",
+        borderSub1: "Субъект 1",
+        borderSub2: "Субъект 2",
+        borderType: "Тип границы",
+        build: "BUILDING",
+        builderInn: "OKS_INN",
+        builderName: "OKS_EXECUTOR",
+        cadastreEngineerFirstName: "CI_FIRST",
+        cadastreEngineerSecondName: "CI_SURNAME",
+        cadastreEngineerThirdName: "CI_PATRONYMIC",
+        cadastreKvartalCount: "KVARTALS_CNT",
+        cadastreKvartalId: "PKK_ID",
+        cadastreKvartalNumber: "KVARTALNUMBER",
+        cadastreNumber: "CAD_NUM",
+        cadastreOkrugId: "PKK_ID",
+        cadastreOkrugNumber: "OKRUGNUMBER",
+        cadastreOksCount: "OKS_CNT",
+        cadastreParcelCount: "PARCELS_CNT",
+        cadastrePrice: "CAD_COST",
+        cadastrePriceUnit: "CAD_UNIT",
+        cadastreRayonCount: "RAYONS_CNT",
+        cadastreRayonId: "PKK_ID",
+        cadastreRayonNumber: "RAYONNUMBER",
+        category: "CATEGORY_TYPE",
+        endBuildingYear: "YEAR_BUILT",
+        formRights: "FORM_RIGHTS",
+        geometryError: "ERROR_CODE",
+        hasMO2Level: "HASMUNICIPALITY2",
+        hasPolygon: "HASPOLYGON",
+        hasStreet: "HASSTREET",
+        house: "HOUSE",
+        inventoryCost: "OKS_INVENTORY_COST",
+        inventoryCostDate: "OKS_COST_DATE",
+        isCenter: "ISCENTER",
+        kladr: "KLADR",
+        letter: "LETTER",
+        loadDate: "RC_DATE",
+        location: "location",
+        locatorField: "Loc_name",
+        locatorIntField: "LocatorInt",
+        locatorNameField: "LocatorName",
+        matchAddress: "Match_addr",
+        mo1LevelId: "MUNICIPALITY1ID",
+        mo2LevelId: "MUNICIPALITY2ID",
+        name: "NAME",
+        objectId: "OBJECTID",
+        oksCadastreNumber: "CADNUMOLD",
+        oksId: "PKK_ID",
+        oksNumber: "OKSNUMBEROLD",
+        oksType: "OKS_TYPE",
+        organizationCode: "ORG_CODE",
+        parcelId: "PARCEL_ID",
+        parcelNumber: "PARCELNUMBER",
+        parentName: "ParentName",
+        phone: "PHONENUMBER",
+        postcode: "POSTCODE",
+        score: "score",
+        settlement: "SETTLEMENT",
+        settlementId: "SETTLEMENTID",
+        shortCadastreNumber: "SHORTNUMBER",
+        sortField: "Sort",
+        startOperationYear: "OKS_YEAR_USED",
+        state: "STATE",
+        stateCode: "PARCEL_STATUS",
+        storeyCount: "OKS_FLOORS",
+        street: "STREET",
+        subjectId: "REGIONID",
+        undergroundStoreyCount: "OKS_U_FLOORS",
+        usrField: "User_fld",
+        utilizationCode: "UTIL_CODE",
+        utilizationDoc: "UTIL_BY_DOC",
+        utilizationFact: "UTILIZATION_FACT",
+        utilizationRef: "UTILIZATION_REFERENCEVALUES",
+        utilizationValue: "UTILIZATION_VALUE",
+        wallMaterial: "OKS_ELEMENTS_CONSTRUCT",
+        xCoord: "X_COORD",
+        xmax: "XMAX",
+        xmin: "XMIN",
+        yCoord: "Y_COORD",
+        ymax: "YMAX",
+        ymin: "YMIN",
+    };
+
+
+    var INFO_WINDOW_CONTENT_TEMPLATE = {
+        tabPanel: "<div class='portlet-nav-toolbar'><div class='portlet-nav-toolbar-box'><ul class='portlet-nav-tabs portlet-nav-tabs-content g-layout'><li class='tabs-item2-active'><a class='tabs-item2'><span><span><span class='tab_header'>Информация</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Характеристики</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Кто обслуживает?</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Услуги</span></span></span></a></li></ul></div></div>",
+        liteTabPanel: "<div class='portlet-nav-toolbar'><div class='portlet-nav-toolbar-box'><ul class='portlet-nav-tabs portlet-nav-tabs-content g-layout'><li class='tabs-item2-active'><a class='tabs-item2'><span><span><span class='tab_header'>Информация</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Характеристики</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Кто обслуживает?</span></span></span></a></li></ul></div></div>",
+        cadastreDiv: "<div class='portlet-nav-toolbar'><div class='portlet-nav-toolbar-box'><ul class='portlet-nav-tabs portlet-nav-tabs-content g-layout'><li class='tabs-item2-active'><a class='tabs-item2'><span><span><span class='tab_header'>На карте</span></span></span></a></li></ul></div></div>",
+        cadastreZoneTabPanel: "<div class='portlet-nav-toolbar'><div class='portlet-nav-toolbar-box'><ul class='portlet-nav-tabs portlet-nav-tabs-content g-layout'><li class='tabs-item2-active'><a class='tabs-item2'><span><span><span class='tab_header'>На карте</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Кто обслуживает?</span></span></span></a></li></ul></div></div>",
+
+        tabHeader: "<div class='portlet-content-wrap2'>",
+        activeTabHeader: "<div class='portlet-content-wrap2 portlet-content-wrap2-active'>",
+        tabFooter: "</div>",
+        divHeader: "<div>",
+        divFooter: "</div>",
+
+        mapInfoContainerHeader: "<div class='mapInfoContainer'>",
+        mapInfoContainerFooter: "</div>",
+        mapInfoEmptyMessage: "<div class='emptyGeometry'><p><strong class='red'>Внимание!</strong> Сведения о границах объекта отсутствуют. Местоположение указано ориентировочно.</p></div>",
+        mapInfoTableHeader: "<table class='mapInfo'><tbody>",
+        mapInfoTableFooter: "</tbody></table>",
+        mapInfoAddressRow: "<tr><td class='leftColumn'>Адрес:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr>",
+        mapInfoParcelRow: "<tr><td>Земельный участок:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\");'><strong>{0}</strong></a></td></tr><tr class='emptyRow'></tr>",
+        mapInfoCadastreKvartalRow: "<tr><td>Квартал:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\");'><strong>{0}</strong></a></td></tr><tr class='emptyRow'></tr>",
+        mapInfoCadastreRayonRow: "<tr><td>Район:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\");'><strong>{0}</strong></a></td></tr><tr class='emptyRow'></tr>",
+        mapInfoCadastreOkrugRow: "<tr><td>Округ:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\");'><strong>{0}</strong></a></td></tr><tr class='emptyRow'></tr>",
+
+        infoTableHeader: "<div class='infoContainer'><table class='info'><tbody>",
+        infoTableFooter: "</tbody></table></div>",
+        infoStateRow: "<tr><td class='leftColumn'>Статус:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoCategory: "<tr><td class='leftColumn'>Категория:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+
+        infoDateRow: "<tr><td class='leftColumn'>Дата постановки на учет:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoAttrActualDateRow: "<tr><td class='leftColumn'>Дата обновления атрибутов на ПКК:</td><td><strong id='actual_date'>{0}</strong></td></tr></tr>",
+        infoBorderActualDateRow: "<tr><td class='leftColumn'>Дата обновления границ на ПКК:</td><td><strong id='border_actual_date'>{0}</strong></td></tr></tr>",
+
+        infoParcelAttrActualDateRow: "<tr><td class='leftColumn'>Дата обновления атрибутов участка на ПКК:</td><td><strong id='actual_date'>{0}</strong></td></tr></tr>",
+        infoParcelBorderActualDateRow: "<tr><td class='leftColumn'>Дата обновления границ участка на ПКК:</td><td><strong id='border_actual_date'>{0}</strong></td></tr></tr>",
+
+        infoOksAttrActualDateRow: "<tr><td class='leftColumn'>Дата обновления атрибутов ОКС на ПКК:</td><td><strong>{0}</strong></td></tr></tr>",
+        infoOksBorderActualDateRow: "<tr><td class='leftColumn'>Дата обновления границ ОКС на ПКК:</td><td><strong>{0}</strong></td></tr></tr>",
+
+
+        infoKLADRRow: "<tr><td class='leftColumn'>Кладр:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+
+        infoLetterRow: "<tr><td class='leftColumn'>Литера:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoWallMaterialRow: "<tr><td class='leftColumn'>Материал стен:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoStartOperationYearRow: "<tr><td class='leftColumn'>Ввод в эксплуатацию:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoEndBuildingYearRow: "<tr><td class='leftColumn'>Завершение строительства:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoInventoryCostRow: "<tr><td class='leftColumn'>Инвентаризационная стоимость:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoInventoryCostDateRow: "<tr><td class='leftColumn'>Дата определения ИС:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoBuilderNameRow: "<tr><td class='leftColumn'>Исполнитель:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoBuilderInnRow: "<tr><td class='leftColumn'>ИНН исполнителя:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoStoreyCountRow: "<tr><td class='leftColumn'>Общая этажность:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+        infoUndergroundStoreyCountRow: "<tr><td class='leftColumn'>Подземная этажность:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+
+        infoUtilizationRow: "<tr><td class='leftColumn' colspan='2'>Разрешенное использование</td></tr><tr class='emptyRow'></tr>",
+        infoUtilizationVRIZCodeRow: "<tr><td class='leftColumn smallFont'>&nbsp&nbsp&nbsp&nbspПо классификатору (код):</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoUtilizationVRIZRow: "<tr><td class='leftColumn smallFont'>&nbsp&nbsp&nbsp&nbspПо классификатору (описание):</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoUtilizationDocRow: "<tr><td class='leftColumn smallFont'>&nbsp&nbsp&nbsp&nbspПо документу:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+
+        infoOwnership: "<tr><td class='leftColumn'>Форма собственности:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
+
+        infoAreaRow: "<tr><td class='leftColumn'>{0}:</td><td><strong>{1} {2}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoAreaDocRow: "<tr><td class='leftColumn'>Площадь по документу:</td><td><strong>{0} {1}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoAreaFactRow: "<tr><td class='leftColumn'>Фактическая площадь:</td><td><strong>{0} {1}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoAreaRefRow: "<tr><td class='leftColumn'>Уточненная площадь:</td><td><strong>{0} {1}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoCadastrePriceRow: "<tr><td class='leftColumn'>Кадастровая стоимость:</td><td><strong>{0} {1}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoCadastreEngineerRow: "<tr><td class='leftColumn'>Кадастровый инженер:</td><td><strong>{0} {1} {2}</strong></td></tr><tr class='emptyRow'></tr>",
+        infoOksTestRow: "<tr><td class='leftColumn'>{0}</td><td><strong>{1}</strong></td></tr><tr class='emptyRow'></tr>",
+
+        zoneListHeader: "<ul id='zoneList' class='zoneList'>",
+        zoneListFooter: "</ul>",
+        zoneWaitListItem: "<li class='waitZoneItem'><img alt='loading' src='/portalonline/i/pin_load.gif'/><span>Загрузка данных...</span></li>",
+        zoneErrorListItem: "<li class='errorZoneItem'><div class='errorZoneItemImg'></div><span>Превышен интвервал ожидания.<br/>Повторите запрос позже.</span></li>",
+        zoneEmptyListItem: "<li class='emptyZoneItem'><div class='emptyZoneItemImg'></div><span>Данные отсутствуют.</span></li>",
+        zoneHeaderListItem: "<li class='headerZoneItem'><strong>{0}</strong></li>",
+        zoneListItem: "<li class='zoneItem'><div class='zoneItemMarker'></div><div class='zoneItemContent'><strong class='zoneItemTitle'>{0}</strong><br/>{1}</div></li>",
+
+        linkListHeader: "<ul class='linkList'>",
+        linkListFooter: "</ul>",
+        linkListItems: [
+                        "<li class='linkItem'><div class='linkIcon'></div><a target='_blank' href='https://rosreestr.ru/wps/portal/cc_information_online?KN={0}' onclick='__event(\"{0}\",ACTIONS.Service,\"Информация онлайн\")' class='link'>Справочная информация об объекте недвижимости в режиме онлайн</a></li>",
+                        "<li class='linkItem'><div class='linkIcon'></div><a target='_blank' href='https://rosreestr.ru/wps/portal/cc_gkn_form_new?KN={0}&objKind={1}' onclick='__event(\"{0}\",ACTIONS.Service,\"Сведения ГКН (new)\")' class='link'>Запрос о предоставлении сведений ГКН</a></li>",
+                        "<li class='linkItem'><div class='linkIcon'></div><a target='_blank' href='https://rosreestr.ru/wps/portal/cc_egrp_form_new?KN={0}&objKind={1}' onclick='__event(\"{0}\",ACTIONS.Service,\"Сведения ЕГРП\")' class='link'>Запрос о предоставлении сведений ЕГРП</a></li>"
+        ],
+        cadastreMapInfoTableContainerHeader: "<div class='cadastreMapInfoContainerContainer' >",
+        cadastreMapInfoTableContainerFooter: "</div>",
+        cadastreMapInfoTableHeader: "<div class='cadastreMapInfoContainer'><table class='cadastreMapInfo'><tbody>",
+        cadastreMapInfoTableFooter: "</tbody></table></div>",
+        cadastreMapInfoEmptyRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr>",
+        cadastreMapInfoParcelCountRow: "<tr><td class='leftColumn'>Участков:</td><td><strong>{0}</strong></td></tr>",
+        cadastreMapInfoKvartalCountRow: "<tr><td class='leftColumn'>Кварталов:</td><td><strong>{0}</strong></td></tr>",
+        cadastreMapInfoRayonCountRow: "<tr><td class='leftColumn'>Районов:</td><td><strong>{0}</strong></td></tr>",
+        cadastreMapInfoOkrugNumberRow: "<tr><td class='leftColumn'>Округ:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\"); return false;'><strong>{0}</strong></a></td></tr>",
+        cadastreMapInfoRayonNumberRow: "<tr><td class='leftColumn'>Район:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\"); return false;'><strong>{0}</strong></a></td></tr>",
+        cadastreMapInfoPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='image.html?id={0}'><strong>План ЗУ</strong></a><a class='pseudoLink' id='kvartalPlan' target='_blank' href='image.html?id={0}&neighbour=true'><strong>План КК</strong></a></td></tr>",
+        cadastreMapInfoKvartalPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='image.html?id={0}'><strong>План КК</strong></a></td></tr>",
+        cadastreMapInfo3DRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='http://maps.rosreestr.ru/portalonline/Cadastre3d/{0}'><strong>3D кадастр</strong></a></td></tr>",
+        cadastreMapInfoOksCountRow: "<tr><td class='leftColumn'>ОКС:</td><td><strong>{0}</strong></td></tr>",
+
+        cadastreZoneListHeader: "<ul id='zoneList' class='zoneList' style='height:155px;'>", //64
+
+
+        zouitMapInfoTableHeader: "<div class='cadastreMapInfoContainer' style='height: 122px;'><table class='cadastreMapInfo'><tbody>",
+        zouitMapInfoTableFooter: "</tbody></table></div>",
+        zouitTypeMapInfoRow: "<tr><td class='leftColumnZone'>Тип:</td><td><strong>{0}</strong></td></tr>",
+        zouitDescriptionMapInfoRow: "<tr><td class='leftColumnZone'>Описание:</td><td><strong>{0}</strong></td></tr>",
+        zouitDocMapInfoRow: "<tr><td class='leftColumnZone'>Документ:</td><td><strong><p id='zouitDocs'></p></strong></td></tr>",
+
+        terrZoneMapInfoTableHeader: "<div class='cadastreMapInfoContainer' style='height: 122px;'><table class='cadastreMapInfo'><tbody>",
+        terrZoneMapInfoTableFooter: "</tbody></table></div>",
+        terrZoneTypeMapInfoRow: "<tr><td class='leftColumnZone'>Тип:</td><td><strong>{0}</strong></td></tr>",
+        terrZoneDescriptionMapInfoRow: "<tr><td class='leftColumnZone'>Описание:</td><td><strong>{0}</strong></td></tr>",
+        terrZoneDocMapInfoRow: "<tr><td class='leftColumnZone'>Документ:</td><td><strong><p id='terrzoneDocs'></p></strong></td></tr>",
+
+        borderMapInfoTableHeader: "<div class='cadastreMapInfoContainer' style='height: 122px'><table class='cadastreMapInfo'><tbody>",
+        borderMapInfoTableFooter: "</tbody></table></div>",
+        borderDescriptionMapInfoRow: "<tr><td class='leftColumn'>Описание:</td><td><strong>{0}</strong></td></tr>",
+        borderSubjectsMapInfoRow: "<tr><td>Граница:</td><td><strong>{0}</strong></td></tr>",
+        borderDocsMapInfoRow: "<tr><td class='leftColumn'>Документы:</td><td><strong><p id='borderDocs'></p></strong></td></tr>",
+
+        atdNameInfoRow: "<tr><td >Наименование:</td><td><strong>{0}</strong></td></tr>",
+
+        atdMapInfoTableHeader: "<div class='cadastreMapInfoContainer' style='height: 122px'><table class='cadastreMapInfo'><tbody>",
+        atdMapInfoTableFooter: "</tbody></table></div>",
+        atdMapOkatoInfoRow: "<tr><td class='leftColumn'>ОКАТО:</td><td><strong>{0}</strong></td></tr>",
+        atdMapOktmoInfoRow: "<tr><td class='leftColumn'>ОКТМО:</td><td><strong>{0}</strong></td></tr>",
+        atdMapCapitalInfoRow: "<tr><td class='leftColumn'>Столица:</td><td><strong>{0}</strong></td></tr>",
+        atdMapCenterInfoRow: "<tr><td class='leftColumn'>Центр:</td><td><strong>{0}</strong></td></tr>",
+
+        atdMapParentInfoRow: "<tr class='emptyRow'></tr><tr><td class='leftColumn' colspan='2'>В составе</td></tr>",
+        atdMapSettlementInfoRow: "<tr><td class='leftColumn'>&nbsp&nbsp&nbsp&nbspПоселение:</td><td><strong>{0}</strong></td></tr>",
+        atdMapRayon1InfoRow: "<tr><td class='leftColumn'>&nbsp&nbsp&nbsp&nbspРайон:</td><td><strong>{0}</strong></td></tr>",
+        atdMapRayon2InfoRow: "<tr><td class='leftColumn'>&nbsp&nbsp&nbsp&nbspОкруг:</td><td><strong>{0}</strong></td></tr>",
+        atdMapSubjectInfoRow: "<tr><td class='leftColumn'>&nbsp&nbsp&nbsp&nbspСубъект РФ:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr>",
+
+        atdMapMOInfoRow: "<tr><td class='leftColumn'>Количество МО:</td><td><strong>{0}</strong></td></tr>",
+        atdMapNPInfoRow: "<tr><td class='leftColumn'>Количество НП:</td><td><strong>{0}</strong></td></tr>",
+        atdMapRosreestrInfoRow: "<tr><td class='leftColumn'>Количество офисов Росреестра:</td><td><strong>{0}</strong></td></tr>",
+        atdMapMO2InfoRow: "<tr><td class='leftColumn'>Количество поселений:</td><td><strong>{0}</strong></td></tr>",
+
+        frameNameMapInfoRow: "<tr><td class='leftColumn'>Название:</td><td><strong>{0}</strong></td></tr>",
+        frameHolderMapInfoRow: "<tr><td class='leftColumn'>Источник:</td><td><strong>{0}</strong></td></tr>",
+        frameScaleMapInfoRow: "<tr><td class='leftColumn'>Масштаб:</td><td><strong>{0}</strong></td></tr>",
+        frameDateMapInfoRow: "<tr><td class='leftColumn'>Актуальность:</td><td><strong>{0}</strong></td></tr>",
+        frameLinkMapInfoRow: "<tr><td class='leftColumn' colspan='2'><img id='frameInfoLinkLoadingIndicator' alt='loading' src='/portalonline/i/pin_load.gif'/><a id='frameInfoLink' style='display:none;' target='_blank' href='javascript: void 0'>Подробная информация</a></td></tr>"
+
+    };
+
+    function addCadastreNumbers(attributes) {
+        var cadParts = attributes[FIELDS.cadastreNumber].split(":");
+
+        if (cadParts.length >= 1 && !attributes[FIELDS.cadastreOkrugNumber])
+            attributes[FIELDS.cadastreOkrugNumber] = cadParts[0];
+
+        if (cadParts.length >= 2 && !attributes[FIELDS.cadastreRayonNumber])
+            attributes[FIELDS.cadastreRayonNumber] = cadParts[1];
+
+        if (cadParts.length >= 3 && !attributes[FIELDS.cadastreKvartalNumber])
+            attributes[FIELDS.cadastreKvartalNumber] = cadParts[2];
+    };
+
+    function buildInfoWindowTitle(objectType, feature) {
+        switch (objectType) {
+            case CadastreTypes.okrug:
+                return OBJECT_TYPE_FULL_NAMES[0] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
+                break;
+            case CadastreTypes.rayon:
+                return OBJECT_TYPE_FULL_NAMES[1] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
+                break;
+            case CadastreTypes.kvartal:
+                return OBJECT_TYPE_FULL_NAMES[2] + ': ' + feature.attributes[FIELDS.cadastreNumber];
+                break;
+            case CadastreTypes.parcel:
+                return OBJECT_TYPE_FULL_NAMES[3] + ': ' + feature.attributes["PARCEL_CN"];
+                break;
+            case CadastreTypes.oks:
+                var oksType = OKS_TYPES[feature.attributes[FIELDS.oksType]] ? ' (' + OKS_TYPES[feature.attributes[FIELDS.oksType]] + ')' : '';
+
+                return OBJECT_TYPE_FULL_NAMES[4] + oksType + ': ' + feature.attributes["PARCEL_CN"];
+                break;
+        }
+    };
+
+    function buildInfoWindowContent(objectType, feature) {
+        switch (objectType) {
+            case CadastreTypes.okrug:
+                return buildCadastreInfoWindowContent(feature);
+                break;
+            case CadastreTypes.rayon:
+                return buildCadastreInfoWindowContent(feature);
+                break;
+            case CadastreTypes.kvartal:
+                return buildCadastreInfoWindowContent(feature);
+                break;
+            case CadastreTypes.parcel:
+                return buildParcelInfoWindowContent(feature);
+                break;
+            case CadastreTypes.oks:
+                return buildOksInfoWindowContent(feature);
+                break;
+        }
+    };
+
+    function substitute(template, params) {
+        var prm;
+        if (params instanceof Array) {
+            prm = {};
+            for (var i = 0; i < params.length; i++) {
+                prm[i.toString()] = params[i];
+            }
+        } else {
+            prm = params;
+        }
+        return template.replace(/{[^{}]+}/g, function (key) {
+            return prm[key.replace(/[{}]+/g, "")] || "";
+        });
+    };
+
+    function numberFormat(_number, _cfg) {
+
+        function obj_merge(obj_first, obj_second) {
+            var obj_return = {};
+            for (key in obj_first) {
+                if (typeof obj_second[key] !== 'undefined') obj_return[key] = obj_second[key];
+                else obj_return[key] = obj_first[key];
+            }
+            return obj_return;
+        };
+
+        function thousands_sep(_num, _sep) {
+            if (_num.length <= 3) return _num;
+            var _count = _num.length;
+            var _num_parser = '';
+            var _count_digits = 0;
+            for (var _p = (_count - 1) ; _p >= 0; _p--) {
+                var _num_digit = _num.substr(_p, 1);
+                if (_count_digits % 3 == 0 && _count_digits != 0 && !isNaN(parseFloat(_num_digit))) _num_parser = _sep + _num_parser;
+                _num_parser = _num_digit + _num_parser;
+                _count_digits++;
+            }
+            return _num_parser;
+        };
+
+        if (typeof _number !== 'number') {
+            _number = parseFloat(_number);
+            if (isNaN(_number)) return CALCULATING;
+        }
+
+        var _cfg_default = { before: '', after: '', decimals: 2, dec_point: '.', thousands_sep: ',' };
+        if (_cfg && typeof _cfg === 'object') {
+            _cfg = obj_merge(_cfg_default, _cfg);
+        }
+        else _cfg = _cfg_default;
+        _number = _number.toFixed(_cfg.decimals);
+        if (_number.indexOf('.') != -1) {
+            var _number_arr = _number.split('.');
+            var _number = thousands_sep(_number_arr[0], _cfg.thousands_sep) + _cfg.dec_point + _number_arr[1];
+        }
+        else var _number = thousands_sep(_number, _cfg.thousands_sep);
+
+        return _cfg.before + _number + _cfg.after;
+    };
+
+    function searchOkrugDate(okrugNumber) {
+
+    };
+
+    function searchZone(point) {
+
+    };
+
+    function formatDate(d, m, y) {
+        return strpad(d, 2, '0', STR_PAD_LEFT) + '.' + strpad(m, 2, '0', STR_PAD_LEFT) + '.' + strpad(y, 4, '0', STR_PAD_LEFT);
+    }
+
+    function buildCadastreInfoWindowContent(feature) {
+        var content = '';
+        content += INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoTableHeader;
+
+        if (feature.attributes[FIELDS.cadastreParcelCount]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoParcelCountRow,
+                [numberFormat(feature.attributes[FIELDS.cadastreParcelCount], { decimals: 0, thousands_sep: " " })]);
+        }
+        if (feature.attributes[FIELDS.cadastreOksCount] || feature.attributes[FIELDS.cadastreOksCount] == 0) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoOksCountRow,
+                [numberFormat(feature.attributes[FIELDS.cadastreOksCount], { decimals: 0, thousands_sep: " " })]);
+        }
+        if (feature.attributes[FIELDS.cadastreKvartalCount]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoKvartalCountRow,
+                [numberFormat(feature.attributes[FIELDS.cadastreKvartalCount], { decimals: 0, thousands_sep: " " })]);
+        }
+        if (feature.attributes[FIELDS.cadastreRayonCount]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoRayonCountRow,
+                [numberFormat(feature.attributes[FIELDS.cadastreRayonCount], { decimals: 0, thousands_sep: " " })]);
+        }
+
+
+        if (feature.attributes[FIELDS.cadastreKvartalNumber] || feature.attributes[FIELDS.cadastreRayonNumber]) {
+            content += dojo.string.substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAttrActualDateRow, [""]);
+            content += dojo.string.substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBorderActualDateRow, [""]);
+            searchOkrugDate(feature.attributes[FIELDS.cadastreOkrugNumber]);
+        }
+        else {
+            if (feature.attributes["ONLINE_ACTUAL_DATE"] != ' ' && feature.attributes["ONLINE_ACTUAL_DATE"] > 0) {
+                var d = new Date(feature.attributes["ONLINE_ACTUAL_DATE"]);
+                content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAttrActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+            }
+            else {
+                content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAttrActualDateRow, [CALCULATING]);
+            }
+            if (feature.attributes["ACTUAL_DATE"] != ' ' && feature.attributes["ACTUAL_DATE"] > 0) {
+                var d = new Date(feature.attributes["ACTUAL_DATE"]);
+                content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBorderActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+            }
+            else {
+                content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBorderActualDateRow, [CALCULATING]);
+            }
+        }
+
+        if (feature.attributes[FIELDS.cadastreKvartalNumber] || feature.attributes[FIELDS.cadastreRayonNumber]) {
+            content += INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoEmptyRow;
+        }
+
+        if (feature.attributes[FIELDS.cadastreKvartalNumber]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoRayonNumberRow, [feature.attributes[FIELDS.cadastreOkrugNumber] + ':' + feature.attributes[FIELDS.cadastreRayonNumber]]);
+        }
+        if (feature.attributes[FIELDS.cadastreRayonNumber]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoOkrugNumberRow, [feature.attributes[FIELDS.cadastreOkrugNumber]]);
+        }
+
+        if (feature.attributes[FIELDS.cadastreKvartalNumber]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoKvartalPlansRow, [feature.attributes[FIELDS.cadastreNumber]]);
+        }
+        content += INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoTableFooter;
+
+        if (feature.clickedPoint || feature.point) {
+            content += INFO_WINDOW_CONTENT_TEMPLATE.tabFooter;
+            //End "CadastreMapInfoo"
+            //Start "Zone"
+            content += INFO_WINDOW_CONTENT_TEMPLATE.tabHeader;
+            content += INFO_WINDOW_CONTENT_TEMPLATE.cadastreZoneListHeader;
+
+            content += INFO_WINDOW_CONTENT_TEMPLATE.zoneWaitListItem;
+
+            content += INFO_WINDOW_CONTENT_TEMPLATE.zoneListFooter;
+            content += INFO_WINDOW_CONTENT_TEMPLATE.tabFooter;
+
+            searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+            //End "Zone"
+        }
+        else {
+            content += INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoTableContainerFooter;
+        }
+
+        return content;
+    };
+
+    function buildParcelInfoWindowContent(feature) {
+        var content = '';
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerHeader;
+
+        if (feature.attributes[FIELDS.geometryError]) {
+            content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoEmptyMessage;
+        }
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableHeader;
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoStateRow,
+            [(feature.attributes[FIELDS.stateCode] == ' ') ? (NO_DATA) : (PARCEL_STATES[feature.attributes[FIELDS.stateCode] - 1])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoAddressRow,
+            [(feature.attributes[FIELDS.address] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.address])]);
+
+        if (feature.attributes[FIELDS.area] && feature.attributes[FIELDS.area] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAreaRow,
+                [AREA_TYPES[feature.attributes[FIELDS.areaType]],
+                    numberFormat(feature.attributes[FIELDS.area], { thousands_sep: " " }),
+                    (feature.attributes[FIELDS.areaUnit]) ? (UNITS[feature.attributes[FIELDS.areaUnit]]) : ('')]);
+        } else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAreaRow, ['Площадь', NO_DATA, '']);
+        }
+
+        if (feature.attributes[FIELDS.cadastrePrice] && feature.attributes[FIELDS.cadastrePrice] != ' ' &&
+            feature.attributes[FIELDS.cadastrePriceUnit] && feature.attributes[FIELDS.cadastrePriceUnit] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastrePriceRow,
+                [numberFormat(feature.attributes[FIELDS.cadastrePrice], { thousands_sep: " " }), UNITS[feature.attributes[FIELDS.cadastrePriceUnit]]]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastrePriceRow, [NO_DATA, '']);
+        }
+
+        if (feature.attributes[FIELDS.formRights] && feature.attributes[FIELDS.formRights] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOwnership, [FORM_RIGHTS[feature.attributes[FIELDS.formRights]]]);
+        } else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOwnership, [NO_DATA]);
+        }
+
+        if (feature.attributes["DATE_CREATE"] != ' ' && feature.attributes["DATE_CREATE"] > 0) {
+            var d = new Date(feature.attributes["DATE_CREATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoDateRow, [NO_DATA]);
+        }
+
+        if (feature.attributes[FIELDS.cadastreEngineerSecondName] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastreEngineerRow,
+                [feature.attributes[FIELDS.cadastreEngineerSecondName], feature.attributes[FIELDS.cadastreEngineerFirstName],
+                    feature.attributes[FIELDS.cadastreEngineerThirdName]]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastreEngineerRow, [NO_DATA, '', '']);
+        }
+
+        var cadNumber = getFullCadastreNumber(feature.attributes['PARCEL_CN']);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreKvartalRow, [cadNumber.kvartalNumber]);
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreRayonRow, [cadNumber.rayonNumber]);
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreOkrugRow, [cadNumber.okrugNumber]);
+
+        if (feature.attributes["ONLINE_ACTUAL_DATE"] != ' ' && feature.attributes["ONLINE_ACTUAL_DATE"] > 0) {
+            var d = new Date(feature.attributes["ONLINE_ACTUAL_DATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoParcelAttrActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoParcelAttrActualDateRow, [NO_DATA]);
+        }
+
+        if (feature.attributes["ACTUAL_DATE"] != ' ' && feature.attributes["ACTUAL_DATE"] > 0) {
+            var d = new Date(feature.attributes["ACTUAL_DATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoParcelBorderActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoParcelBorderActualDateRow, [NO_DATA]);
+        }
+
+        //if (!feature.attributes[FIELDS.geometryError]) {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfoPlansRow, [feature.attributes['PARCEL_CN']]);
+        //}
+
+        //if (feature.attributes[FIELDS.parcelId] == '52:18:70020:25') {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfo3DRow, ['index_apartmentcomplex.html']);
+        //}
+        //else if (feature.attributes[FIELDS.parcelId] == '52:18:60085:21') {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfo3DRow, ['index_gaspipeline.html']);
+        //}
+        //else if (feature.attributes[FIELDS.parcelId] == '52:18:70012:23') {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.cadastreMapInfo3DRow, ['index_teledom.html']);
+        //}
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableFooter;
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerFooter;
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.tabFooter;
+        //End "MapInfo"
+
+        //Start "Info"
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCategory,
+            [(feature.attributes[FIELDS.category] == ' ') ? (NO_DATA) : (CATEGORY_TYPES[feature.attributes[FIELDS.category]])]);
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationRow;
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationVRIZCodeRow,
+            [(feature.attributes[FIELDS.utilizationCode] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.utilizationCode])]);
+
+        //if(UTILIZATIONS[feature.attributes[FIELDS.utilizationCode]]) {
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationVRIZRow,
+            [(!feature.attributes[FIELDS.utilizationCode] || feature.attributes[FIELDS.utilizationCode] == ' ') ?
+                (NO_DATA) : (UTILIZATIONS[feature.attributes[FIELDS.utilizationCode]])]);
+        //}
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationDocRow,
+            [(!feature.attributes[FIELDS.utilizationDoc] || feature.attributes[FIELDS.utilizationDoc] == ' ') ?
+                (NO_DATA) : (feature.attributes[FIELDS.utilizationDoc])]);
+
+        //End "Info"
+
+        //Start "Zone"
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneWaitListItem;
+        //End "Zone"
+
+        ////Start "Link"
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.linkListHeader;
+        //for (var linkItem in INFO_WINDOW_CONTENT_TEMPLATE.linkListItems) {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.linkListItems[linkItem], [feature.attributes["PARCEL_CN"], KINDS[-1]]);
+        //}
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.linkListFooter;
+        ////End "Link"
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableFooter;
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerFooter;
+
+
+        //searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+
+        return content;
+    };
+
+    function buildOksInfoWindowContent(feature) {
+
+    };
+
+
     var STR_PAD_LEFT = 1;
     var STR_PAD_RIGHT = 2;
     var STR_PAD_BOTH = 3;
@@ -30,6 +631,36 @@
         return String(paddingValue + this).slice(-paddingValue.length);
     };
 
+    function getCadastreObjectType(feature) {
+        var objectType;
+        if (typeof feature.attributes["Тип ОКС"] !== "undefined") {
+            objectType = CadastreTypes.oks;
+        }
+        else if (feature.value.split(':').length == 4) {
+            objectType = CadastreTypes.parcel;
+        }
+        else {
+            objectType = getCadastreObjectTypeById(feature.value);
+        }
+        return objectType;
+    };
+
+    function getCadastreObjectTypeById(id) {
+        switch (id.length) {
+            case 2:
+                return CadastreTypes.okrug;
+            case 4:
+                return CadastreTypes.rayon;
+            case 11:
+                return CadastreTypes.kvartal;
+            case 16:
+            case 18:
+                return CadastreTypes.parcel;
+            case 21:
+                return CadastreTypes.oks;
+        }
+    };
+
     var CadastreTypes = {
         okrug: {
             fieldId: "PKK_ID",
@@ -55,7 +686,11 @@
             fieldId: "PKK_ID",
             layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/0",
             title: "Oks"
-        }
+        },
+        subject: {},
+        mo1Level: {},
+        mo2Level: {},
+        settlement: {}
     };
 
     var getCadastreType = function (cadastreNumber) {
@@ -101,7 +736,24 @@
             return true;
         else
             return false;
-    }
+    };
+
+    function getFullCadastreNumber(number) {
+        var numberParts = number.split(":");
+
+        number = '';
+
+        var cadNumber = {};
+
+        if (numberParts.length >= 1)
+            cadNumber.okrugNumber = numberParts[0];
+        if (numberParts.length >= 2)
+            cadNumber.rayonNumber = cadNumber.okrugNumber + ":" + numberParts[1];
+        if (numberParts.length >= 3)
+            cadNumber.kvartalNumber = cadNumber.rayonNumber + ":" + numberParts[2];
+
+        return cadNumber;
+    };
 
     _translationsHash.addtext("rus", {
         cadastrePlugin: {
@@ -177,6 +829,7 @@
     var dx, dy, map;
     var mapListenerInfo, cadastreLayerListener, cadastreLayerSearchListener; // Listener для идентификации кадастрового участка на карте
     var balloonInfo, balloonSearch; // balloon для идентификации и поиска кадастрового участка на карте
+    var geometry;// геометрия выделенного участка
     var cadastreLayerInfo, cadastreLayerSearch, cadastreLayer;
     var cadastreServer;
     var cadastreServerThematic;
@@ -244,16 +897,113 @@
         return 180 / Math.PI * (2 * Math.atan(Math.exp((y / POLE) * Math.PI)) - Math.PI / 2);
     };
 
+    function getObjectIdField(objectType) {
+        switch (objectType) {
+            case CadastreTypes.okrug:
+                return FIELDS.cadastreOkrugId;
+            case CadastreTypes.rayon:
+                return FIELDS.cadastreRayonId;
+            case CadastreTypes.kvartal:
+                return FIELDS.cadastreKvartalId;
+            case CadastreTypes.parcel:
+                return FIELDS.parcelId;
+            case CadastreTypes.oks:
+                return FIELDS.oksId;
+            case CadastreTypes.subject:
+                return FIELDS.subjectId;
+            case CadastreTypes.mo1Level:
+                return FIELDS.mo1LevelId;
+            case CadastreTypes.mo2Level:
+                return FIELDS.mo2LevelId;
+            case CadastreTypes.settlement:
+                return FIELDS.settlementId;
+        }
+    };
+
+    function showInfoWindow(objectType, feature) {
+        $("#loader").hide();
+        $("#alert").hide();
+        balloonInfo.setVisible(true);
+        balloonInfo.visible = true;
+
+        var html = "<div style='width: 370px; max-height: 230px; min-height: 150px; overflow-x: auto; overflow-y: auto;'>";
+
+        var title = '<div class="cadastreTitle">' + buildInfoWindowTitle(objectType, feature) + '</div>';
+        var content = buildInfoWindowContent(objectType, feature);
+        var dwnld = '<div class="getGeom" >Получить геометрию</div>';
+
+        balloonInfo.div.innerHTML = title + content + dwnld;
+
+        showGeometry(geometry);
+
+        $(".getGeom").click(function () {
+            var result = JSON.stringify([{
+                "properties": { "isVisible": true, "text": "" },
+                "geometry": geom
+            }]);
+            sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
+                name: fileName,
+                format: "Shape",
+                points: '',
+                lines: '',
+                polygons: result
+            });
+        });
+    };
+
+    function searchParcelObject(objectType, query) {
+        query.f = "json";
+        query.returnGeometry = true;
+
+        $.ajax(objectType.layerUrl, {
+            crossDomain: true,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            async: false,
+            dataType: "jsonp",
+            jsonpCallback: 'fnsuccesscallback',
+            data: query
+        }).done(function (featureSet) {
+            showInfoWindow(objectType, featureSet.features[0]);
+        }
+        ).fail(function () { });
+    };
+
+    function searchObject(objectType, whereClause) {
+        $.ajax(objectType.layerUrl + "/query", {
+            crossDomain: true,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            async: false,
+            dataType: "jsonp",
+            jsonpCallback: 'fnsuccesscallback',
+            data: {
+                outFields: '*',
+                where: whereClause,
+                f: 'json',
+                returnGeometry: 'true',
+                geometryType: 'esriGeometryPoint',
+                spatialRel: 'esriSpatialRelIntersects'
+            }
+        }).done(function (featureSet) {
+            showInfoWindow(objectType, featureSet.features[0]);
+        }
+        ).fail(function () { });
+    };
+
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
             geometryRequest.abort();
+
         if (balloonInfo) {
             balloonInfo.setVisible(false);
             balloonInfo.remove();
             balloonInfo = null;
         }
+
         if (cadastreLayerInfo)
             cadastreLayerInfo.setVisible(false);
+
         balloonInfo = gmxAPI.map.addBalloon();
         var mousePosX = x;
         var mousePosY = y;
@@ -261,11 +1011,9 @@
         mousePosX = gmxAPI.merc_x(mousePosX);
         mousePosY = gmxAPI.merc_y(mousePosY);
         balloonInfo.setVisible(false);
-        var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
         var geoX = merc_x(gmxAPI.from_merc_x(mousePosX - parseFloat(dx).toFixed(2)));
         var geoY = merc_y(gmxAPI.from_merc_y(mousePosY - parseFloat(dy).toFixed(2)));
 
-        var geometry = "";
         $("#loader").show();
 
         $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
@@ -288,171 +1036,27 @@
             }
         }).done(function (data) {
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
-                fileName = data.results[data.results.length - 1].value;
-                data.results.forEach(function (value) {
-                    switch (value.layerId) {
-                        case 20:
-                        case 19:
-                        case 18:
-                        case 17:
-                        case 16:
-                            html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo' style='text-align:left;'>";
-                            html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ СФ</th><td>" + test(value.attributes["Ключ СФ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор</th><td>" + test(value.attributes["Идентификатор"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер</th><td>" + test(value.attributes["Кадастровый номер"]) + "</td></tr>";
-                            html += "<tr><th>Наименование</th><td>" + test(value.attributes["Наименование"]) + "</td></tr>";
-                            html += "<tr><th>Аннотация</th><td>" + test(value.attributes["Аннотация"]) + "</td></tr>";
-                            html += "<tr><th>Число КР</th><td>" + test(value.attributes["Число КР"]) + "</td></tr>";
-                            html += "<tr><th>Число КК</th><td>" + test(value.attributes["Число КК"]) + "</td></tr>";
-                            html += "<tr><th>Число ЗУ</th><td>" + test(value.attributes["Число ЗУ"]) + "</td></tr>";
-                            html += "<tr><th>ACTUAL_DATE</th><td>" + test(value.attributes["ACTUAL_DATE"]) + "</td></tr>";
-                            html += "<tr><th>X центра</th><td>" + test(value.attributes["X центра"]) + "</td></tr>";
-                            html += "<tr><th>Y центра</th><td>" + test(value.attributes["Y центра"]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X мин.</th><td>" + test(value.attributes["Экстент - X мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X макс.</th><td>" + test(value.attributes["Экстент - X макс."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
-                            html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
-                            html += "<tr><th>ONLINE_ACTUAL_DATE</th><td>" + test(value.attributes["ONLINE_ACTUAL_DATE"]) + "</td></tr>";
-                            html += "</table></div>";
-                            break
-                        case 14:
-                        case 13:
-                        case 12:
-                        case 11:
-                            html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo' style='text-align:left'>";
-                            html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ СФ</th><td>" + test(value.attributes["Ключ СФ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор</th><td>" + test(value.attributes["Идентификатор"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор родителя</th><td>" + test(value.attributes["Идентификатор родителя"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер</th><td>" + test(value.attributes["Кадастровый номер"]) + "</td></tr>";
-                            html += "<tr><th>Наименование</th><td>" + test(value.attributes["Наименование"]) + "</td></tr>";
-                            html += "<tr><th>Аннотация</th><td>" + test(value.attributes["Аннотация"]) + "</td></tr>";
-                            html += "<tr><th>Код ошибки</th><td>" + test(value.attributes["Код ошибки"]) + "</td></tr>";
-                            html += "<tr><th>Число КК</th><td>" + test(value.attributes["Число КК"]) + "</td></tr>";
-                            html += "<tr><th>Число ЗУ</th><td>" + test(value.attributes["Число ЗУ"]) + "</td></tr>";
-                            html += "<tr><th>Дата актуальности</th><td>" + test(value.attributes["Дата актуальности"]) + "</td></tr>";
-                            html += "<tr><th>X центра</th><td>" + test(value.attributes["X центра"]) + "</td></tr>";
-                            html += "<tr><th>Y центра</th><td>" + test(value.attributes["Y центра"]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X мин.</th><td>" + test(value.attributes["Экстент - X мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X макс.</th><td>" + test(value.attributes["Экстент - X макс."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
-                            html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
-                            html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
-                            break;
-                        case 10:
-                        case 8:
-                        case 7:
-                        case 6:
-                            html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo' style='text-align:left'>";
-                            html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ СФ</th><td>" + test(value.attributes["Ключ СФ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор</th><td>" + test(value.attributes["Идентификатор"]) + "</td></tr>";
-                            html += "<tr><th>Текстовый идентификатор ИПГУ</th><td>" + test(value.attributes["Текстовый идентификатор ИПГУ"]) + "</td></tr>";
-                            html += "<tr><th>Числовой идентификатор ИПГУ</th><td>" + test(value.attributes["Числовой идентификатор ИПГУ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор родителя</th><td>" + test(value.attributes["Идентификатор родителя"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер</th><td>" + test(value.attributes["Кадастровый номер"]) + "</td></tr>";
-                            html += "<tr><th>Аннотация</th><td>" + test(value.attributes["Аннотация"]) + "</td></tr>";
-                            html += "<tr><th>Значение кадастровой стоимости</th><td>" + test(value.attributes["Значение кадастровой стоимости"]) + "</td></tr>";
-                            html += "<tr><th>Категория земель (код)</th><td>" + test(value.attributes["Категория земель (код)"]) + "</td></tr>";
-                            html += "<tr><th>Вид разрешенного использования (код)</th><td>" + test(value.attributes["Вид разрешенного использования (код)"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор системы координат</th><td>" + test(value.attributes["Идентификатор системы координат"]) + "</td></tr>";
-                            html += "<tr><th>Код ошибки</th><td>" + test(value.attributes["Код ошибки"]) + "</td></tr>";
-                            html += "<tr><th>Число ЗУ</th><td>" + test(value.attributes["Число ЗУ"]) + "</td></tr>";
-                            html += "<tr><th>Дата актуальности квартала</th><td>" + test(value.attributes["Дата актуальности квартала"]) + "</td></tr>";
-                            html += "<tr><th>Дата актуальности участков</th><td>" + test(value.attributes["Дата актуальности участков"]) + "</td></tr>";
-                            html += "<tr><th>X центра</th><td>" + test(value.attributes["X центра"]) + "</td></tr>";
-                            html += "<tr><th>Y центра</th><td>" + test(value.attributes["Y центра"]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X мин.</th><td>" + test(value.attributes["Экстент - X мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X макс.</th><td>" + test(value.attributes["Экстент - X макс."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
-                            html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
-                            html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
-                            break;
-                        case 4:
-                        case 3:
-                            html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер земельного участка"]) + "</h3><br><div><table id='tableInfo' style='text-align:left'>";
-                            html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ СФ</th><td>" + test(value.attributes["Ключ СФ"]) + "</td></tr>";
-                            html += "<tr><th>Строковый идентификатор ИПГУ</th><td>" + test(value.attributes["Строковый идентификатор ИПГУ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор ПКК</th><td>" + test(value.attributes["Идентификатор ПКК"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор родителя</th><td>" + test(value.attributes["Идентификатор родителя"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер земельного участка</th><td>" + test(value.attributes["Кадастровый номер земельного участка"]) + "</td></tr>";
-                            html += "<tr><th>Статус земельного участка (код)</th><td>" + test(value.attributes["Статус земельного участка (код)"]) + "</td></tr>";
-                            html += "<tr><th>Аннотация</th><td>" + test(value.attributes["Аннотация"]) + "</td></tr>";
-                            html += "<tr><th>Значение кадастровой стоимости</th><td>" + test(value.attributes["Значение кадастровой стоимости"]) + "</td></tr>";
-                            html += "<tr><th>Вид разрешенного использования (код)</th><td>" + test(value.attributes["Вид разрешенного использования (код)"]) + "</td></tr>";
-                            html += "<tr><th>Категория земель (код)</th><td>" + test(value.attributes["Категория земель (код)"]) + "</td></tr>";
-                            html += "<tr><th>Дата актуальности</th><td>" + test(value.attributes["Дата актуальности"]) + "</td></tr>";
-                            html += "<tr><th>Код ошибки</th><td>" + test(value.attributes["Код ошибки"]) + "</td></tr>";
-                            html += "<tr><th>X центра</th><td>" + test(value.attributes["X центра"]) + "</td></tr>";
-                            html += "<tr><th>Y центра</th><td>" + test(value.attributes["Y центра"]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X мин.</th><td>" + test(value.attributes["Экстент - X мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X макс.</th><td>" + test(value.attributes["Экстент - X макс."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
-                            html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
-                            html += "<tr><th>G_AREA</th><td>" + test(value.attributes["G_AREA"]) + "</td></tr>";
-                            html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
-                            break;
-                        case 2:
-                        case 1:
-                            html += "<h3>" + test(value.layerName) + ", " + test(value.attributes["Кадастровый номер"]) + "</h3><br><div><table id='tableInfo'style='text-align:left'>";
-                            html += "<tr><th>OBJECTID</th><td>" + test(value.attributes["OBJECTID"]) + "</td></tr>";
-                            html += "<tr><th>Ключ СФ</th><td>" + test(value.attributes["Ключ СФ"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор ОКС</th><td>" + test(value.attributes["Идентификатор ОКС"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер</th><td>" + test(value.attributes["Кадастровый номер"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер старый</th><td>" + test(value.attributes["Кадастровый номер старый"]) + "</td></tr>";
-                            html += "<tr><th>Код статуса</th><td>" + test(value.attributes["Код статуса"]) + "</td></tr>";
-                            html += "<tr><th>Тип ОКС</th><td>" + test(value.attributes["Тип ОКС"]) + "</td></tr>";
-                            html += "<tr><th>Подпись</th><td>" + test(value.attributes["Подпись"]) + "</td></tr>";
-                            html += "<tr><th>Дата обновления</th><td>" + test(value.attributes["Дата обновления"]) + "</td></tr>";
-                            html += "<tr><th>Объект обработан - можно удалять</th><td>" + test(value.attributes["Объект обработан - можно удалять"]) + "</td></tr>";
-                            html += "<tr><th>Идентификатор родителя</th><td>" + test(value.attributes["Идентификатор родителя"]) + "</td></tr>";
-                            html += "<tr><th>Числовой идентификатор</th><td>" + test(value.attributes["Числовой идентификатор"]) + "</td></tr>";
-                            html += "<tr><th>Кадастровый номер ЗУ</th><td>" + test(value.attributes["Кадастровый номер ЗУ"]) + "</td></tr>";
-                            html += "<tr><th>Код ошибки</th><td>" + test(value.attributes["Код ошибки"]) + "</td></tr>";
-                            html += "<tr><th>X центра</th><td>" + test(value.attributes["X центра"]) + "</td></tr>";
-                            html += "<tr><th>Y центра</th><td>" + test(value.attributes["Y центра"]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X мин.</th><td>" + test(value.attributes["Экстент - X мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - X макс.</th><td>" + test(value.attributes["Экстент - X макс."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y мин.</th><td>" + test(value.attributes["Экстент - Y мин."]) + "</td></tr>";
-                            html += "<tr><th>Экстент - Y макс.</th><td>" + test(value.attributes["Экстент - Y макс."]) + "</td></tr>";
-                            html += "</table></div>";
-                            html += '<br /><span style="cursor: pointer; text-decoration: underline;" class="getGeom" >Получить геометрию</span>'
-                            break;
-                    }
-                    geometry = value.geometry.rings;
-                });
-                $("#loader").hide();
-                $("#alert").hide();
-                balloonInfo.setVisible(true);
-                balloonInfo.visible = true;
-                balloonInfo.div.innerHTML = html;
 
-                var geom = getGeometry_merc2wgs(geometry);
+                var featureSet = data.results;
+                fileName = featureSet[data.results.length - 1].value;
 
-                showGeometry(geom);
+                var objectType = getCadastreObjectType(featureSet[0]);
 
-                $(".getGeom").click(function () {
-                    var result = JSON.stringify([{
-                        "properties": { "isVisible": true, "text": "" },
-                        "geometry": geom
-                    }]);
-                    sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
-                        name: fileName,
-                        format: "Shape",
-                        points: '',
-                        lines: '',
-                        polygons: result
-                    });
-                });
+                var whereClause = '';
+                var cadNumbers = '';
+                for (var i = 0; i < featureSet.length; i++) {
+                    whereClause += ",'" + featureSet[i].value + "'";
+                    cadNumbers += ",'" + featureSet[i].attributes[objectType == CadastreTypes.oks ? 'Кадастровый номер' : 'Строковый идентификатор ИПГУ'] + "'";
+                }
+
+                if (objectType == CadastreTypes.parcel || objectType == CadastreTypes.oks) {
+                    searchParcelObject(objectType, { cadNums: "[" + cadNumbers.substring(1) + "]", onlyAttributes: false });
+                }
+                else {
+                    searchObject(objectType, getObjectIdField(objectType) + " IN (" + whereClause.substring(1) + ")");
+                }
+
+                geometry = getGeometry_merc2wgs(featureSet[0].geometry.rings);
 
             } else {
                 $("#loader").hide();
@@ -476,6 +1080,41 @@
     var NO_DATA = "Нет данных";
     var CATEGORY_TYPES = { "003001000000": "Земли сельскохозяйственного назначения", "003002000000": "Земли поселений (земли населенных пунктов)", "003003000000": "Земли промышленности, энергетики, транспорта, связи, радиовещания, телевидения, информатики, земли для обеспечения космической деятельности, земли обороны, безопасности и земли иного специального назначения", "003004000000": "Земли особо охраняемых территорий и объектов", "003005000000": "Земли лесного фонда", "003006000000": "Земли водного фонда", "003007000000": "Земли запаса", "003008000000": "Категория не установлена" };
     var UTILIZATIONS = { "141000000000": "Для размещения объектов сельскохозяйственного назначения и сельскохозяйственных угодий", "141001000000": "Для сельскохозяйственного производства", "141001010000": "Для использования в качестве сельскохозяйственных угодий", "141001020000": "Для размещения зданий, строений, сооружений, используемых для производства, хранения и первичной переработки сельскохозяйственной продукции", "141001030000": "Для размещения внутрихозяйственных дорог и коммуникаций", "141001040000": "Для размещения водных объектов", "141002000000": "Для ведения крестьянского (фермерского) хозяйства", "141003000000": "Для ведения личного подсобного хозяйства", "141004000000": "Для ведения гражданами садоводства и огородничества", "141005000000": "Для ведения гражданами животноводства", "141006000000": "Для дачного строительства", "141007000000": "Для размещения древесно-кустарниковой растительности, предназначенной для защиты земель от воздействия негативных (вредных) природных, антропогенных и техногенных явлений", "141008000000": "Для научно-исследовательских целей", "141009000000": "Для учебных целей", "141010000000": "Для сенокошения и выпаса скота гражданами", "141011000000": "Фонд перераспределения", "141012000000": "Для размещения объектов охотничьего хозяйства", "141013000000": "Для размещения объектов рыбного хозяйства", "141014000000": "Для иных видов сельскохозяйственного использования", "142000000000": "Для размещения объектов, характерных для населенных пунктов", "142001000000": "Для объектов жилой застройки", "142001010000": "Для индивидуальной жилой застройки", "142001020000": "Для многоквартирной застройки", "142001020100": "Для малоэтажной застройки", "142001020200": "Для среднеэтажной застройки", "142001020300": "Для многоэтажной застройки", "142001020400": "Для иных видов жилой застройки", "142001030000": "Для размещения объектов дошкольного, начального, общего и среднего (полного) общего образования", "142001040000": "Для размещения иных объектов, допустимых в жилых зонах и не перечисленных в классификаторе", "142002000000": "Для объектов общественно-делового значения", "142002010000": "Для размещения объектов социального и коммунально-бытового назначения", "142002020000": "Для размещения объектов здравоохранения", "142002030000": "Для размещения объектов культуры", "142002040000": "Для размещения объектов торговли", "142002040100": "Для размещения объектов розничной торговли", "142002040200": "Для размещения объектов оптовой торговли", "142002050000": "Для размещения объектов общественного питания", "142002060000": "Для размещения объектов предпринимательской деятельности", "142002070000": "Для размещения объектов среднего профессионального и высшего профессионального образования", "142002080000": "Для размещения административных зданий", "142002090000": "Для размещения научно-исследовательских учреждений", "142002100000": "Для размещения культовых зданий", "142002110000": "Для стоянок автомобильного транспорта", "142002120000": "Для размещения объектов делового назначения, в том числе офисных центров", "142002130000": "Для размещения объектов финансового назначения", "142002140000": "Для размещения гостиниц", "142002150000": "Для размещения подземных или многоэтажных гаражей", "142002160000": "Для размещения индивидуальных гаражей", "142002170000": "Для размещения иных объектов общественно-делового значения, обеспечивающих жизнь граждан", "142003000000": "Для общего пользования (уличная сеть)", "142004000000": "Для размещения объектов специального назначения", "142004010000": "Для размещения кладбищ", "142004020000": "Для размещения крематориев", "142004030000": "Для размещения скотомогильников", "142004040000": "Под объектами размещения отходов потребления", "142004050000": "Под иными объектами специального назначения", "142005000000": "Для размещения коммунальных, складских объектов", "142006000000": "Для размещения объектов жилищно-коммунального хозяйства", "142007000000": "Для иных видов использования, характерных для населенных пунктов", "143000000000": "Для размещения объектов промышленности, энергетики, транспорта, связи, радиовещания, телевидения, информатики, обеспечения космической деятельности, обороны, безопасности и иного специального назначения", "143001000000": "Для размещения промышленных объектов", "143001010000": "Для размещения производственных и административных зданий, строений, сооружений и обслуживающих их объектов", "143001010100": "Для размещения производственных зданий", "143001010200": "Для размещения коммуникаций", "143001010300": "Для размещения подъездных путей", "143001010400": "Для размещения складских помещений", "143001010500": "Для размещения административных зданий", "143001010600": "Для размещения культурно-бытовых зданий", "143001010700": "Для размещения иных сооружений промышленности", "143001020000": "Для добычи и разработки полезных ископаемых", "143001030000": "Для размещения иных объектов промышленности", "143002000000": "Для размещения объектов энергетики", "143002010000": "Для размещения электростанций и обслуживающих сооружений и объектов", "143002010100": "Для размещения гидроэлектростанций", "143002010200": "Для размещения атомных станций", "143002010300": "Для размещения ядерных установок", "143002010400": "Для размещения пунктов хранения ядерных материалов и радиоактивных веществ энергетики", "143002010500": "Для размещения хранилищ радиоактивных отходов", "143002010600": "Для размещения тепловых станций", "143002010700": "Для размещения иных типов электростанций", "143002010800": "Для размещения иных обслуживающих сооружений и объектов", "143002020000": "Для размещения объектов электросетевого хозяйства", "143002020100": "Для размещения воздушных линий электропередачи", "143002020200": "Для размещения наземных сооружений кабельных линий электропередачи", "143002020300": "Для размещения подстанций", "143002020400": "Для размещения распределительных пунктов", "143002020500": "Для размещения других сооружений и объектов электросетевого хозяйства", "143002030000": "Для размещения иных объектов энергетики", "143003000000": "Для размещения объектов транспорта", "143003010000": "Для размещения и эксплуатации объектов железнодорожного транспорта", "143003010100": "Для размещения железнодорожных путей и их конструктивных элементов", "143003010200": "Для размещения полос отвода железнодорожных путей", "143003010300": "Для размещения, эксплуатации, расширения и реконструкции строений, зданий, сооружений, в том числе железнодорожных вокзалов, железнодорожных станций, а также устройств и других объектов, необходимых для эксплуатации, содержания, строительства, реконструкции, ремонта, развития наземных и подземных зданий, строений, сооружений, устройств и других объектов железнодорожного транспорта", "143003010301": "Для размещения железнодорожных вокзалов", "143003010302": "Для размещения железнодорожных станций", "143003010303": "Для размещения устройств и других объектов, необходимых для эксплуатации, содержания, строительства, реконструкции, ремонта, развития наземных и подземных зданий, строений, сооружений, устройств и других объектов железнодорожного транспорта", "143003020000": "Для размещения и эксплуатации объектов автомобильного транспорта и объектов дорожного хозяйства", "143003020100": "Для размещения автомобильных дорог и их конструктивных элементов", "143003020200": "Для размещения полос отвода", "143003020300": "Для размещения объектов дорожного сервиса в полосах отвода автомобильных дорог", "143003020400": "Для размещения дорожных сооружений", "143003020500": "Для размещения автовокзалов и автостанций", "143003020600": "Для размещения иных объектов автомобильного транспорта и дорожного хозяйства", "143003030000": "Для размещения и эксплуатации объектов морского, внутреннего водного транспорта", "143003030100": "Для размещения искусственно созданных внутренних водных путей", "143003030200": "Для размещения морских и речных портов, причалов, пристаней", "143003030300": "Для размещения иных объектов морского, внутреннего водного транспорта", "143003030400": "Для выделения береговой полосы", "143003040000": "Для размещения и эксплуатации объектов воздушного транспорта", "143003040100": "Для размещения аэропортов и аэродромов", "143003040200": "Для размещения аэровокзалов", "143003040300": "Для размещения взлетно-посадочных полос", "143003040400": "Для размещения иных наземных объектов воздушного транспорта", "143003050000": "Для размещения и эксплуатации объектов трубопроводного транспорта", "143003050100": "Для размещения нефтепроводов", "143003050200": "Для размещения газопроводов", "143003050300": "Для размещения иных трубопроводов", "143003050400": "Для размещения иных объектов трубопроводного транспорта", "143003060000": "Для размещения и эксплуатации иных объектов транспорта", "143004000000": "Для размещения объектов связи, радиовещания, телевидения, информатики", "143004010000": "Для размещения эксплуатационных предприятий связи и обслуживания линий связи", "143004020000": "Для размещения кабельных, радиорелейных и воздушных линий связи и линий радиофикации на трассах кабельных и воздушных линий связи и радиофикации и их охранные зоны", "143004030000": "Для размещения подземных кабельных и воздушных линий связи и радиофикации и их охранные зоны", "143004040000": "Для размещения наземных и подземных необслуживаемых усилительных пунктов на кабельных линиях связи и их охранные зоны", "143004050000": "Для размещения наземных сооружений и инфраструктур спутниковой связи", "143004060000": "Для размещения иных объектов связи, радиовещания, телевидения, информатики", "143005000000": "Для размещения объектов, предназначенных для обеспечения космической деятельности", "143005010000": "Для размещения космодромов, стартовых комплексов и пусковых установок", "143005020000": "Для размещения командно-измерительных комплексов, центров и пунктов управления полетами космических объектов, приема, хранения и переработки информации", "143005030000": "Для размещения баз хранения космической техники", "143005040000": "Для размещения полигонов приземления космических объектов и взлетно-посадочных полос", "143005050000": "Для размещения объектов экспериментальной базы для отработки космической техники", "143005060000": "Для размещения центров и оборудования для подготовки космонавтов", "143005070000": "Для размещения других наземных сооружений и техники, используемых при осуществлении космической деятельности", "143006000000": "Для размещения объектов, предназначенных для обеспечения обороны и безопасности", "143006010000": "Для обеспечения задач обороны", "143006010100": "Для размещения военных организаций, учреждений и других объектов", "143006010200": "Для дислокации войск и сил флота", "143006010300": "Для проведения учений и иных мероприятий", "143006010400": "Для испытательных полигонов", "143006010500": "Для мест уничтожения оружия и захоронения отходов", "143006010600": "Для создания запасов материальных ценностей в государственном и мобилизационном резервах (хранилища, склады и другие)", "143006010700": "Для размещения иных объектов обороны", "143006020000": "Для размещения объектов (территорий), обеспечивающих защиту и охрану Государственной границы Российской Федерации", "143006020100": "Для обустройства и содержания инженерно-технических сооружений и заграждений", "143006020200": "Для обустройства и содержания пограничных знаков", "143006020300": "Для обустройства и содержания пограничных просек", "143006020400": "Для обустройства и содержания коммуникаций", "143006020500": "Для обустройства и содержания пунктов пропуска через Государственную границу Российской Федерации", "143006020600": "Для размещения иных объектов для защиты и охраны Государственной границы Российской Федерации", "143006030000": "Для размещения иных объектов обороны и безопасности", "143007000000": "Для размещения иных объектов промышленности, энергетики, транспорта, связи, радиовещания, телевидения, информатики, обеспечения космической деятельности, обороны, безопасности и иного специального назначения", "144000000000": "Для размещения особо охраняемых историко-культурных и природных объектов (территорий)", "144001000000": "Для размещения особо охраняемых природных объектов (территорий)", "144001010000": "Для размещения государственных природных заповедников (в том числе биосферных)", "144001020000": "Для размещения государственных природных заказников", "144001030000": "Для размещения национальных парков", "144001040000": "Для размещения природных парков", "144001050000": "Для размещения дендрологических парков", "144001060000": "Для размещения ботанических садов", "144001070000": "Для размещения объектов санаторного и курортного назначения", "144001080000": "Территории месторождений минеральных вод, лечебных грязей, рапы лиманов и озер", "144001090000": "Для традиционного природопользования", "144001100000": "Для размещения иных особо охраняемых природных территорий (объектов)", "144002000000": "Для размещения объектов (территорий) природоохранного назначения", "144003000000": "Для размещения объектов (территорий) рекреационного назначения", "144003010000": "Для размещения домов отдыха, пансионатов, кемпингов", "144003020000": "Для размещения объектов физической культуры и спорта", "144003030000": "Для размещения туристических баз, стационарных и палаточных туристско-оздоровительных лагерей, домов рыболова и охотника, детских туристических станций", "144003040000": "Для размещения туристических парков", "144003050000": "Для размещения лесопарков", "144003060000": "Для размещения учебно-туристических троп и трасс", "144003070000": "Для размещения детских и спортивных лагерей", "144003080000": "Для размещения скверов, парков, городских садов", "144003090000": "Для размещения пляжей", "144003100000": "Для размещения иных объектов (территорий) рекреационного назначения", "144004000000": "Для размещения объектов историко-культурного назначения", "144004010000": "Для размещения объектов культурного наследия народов Российской Федерации (памятников истории и культуры), в том числе объектов археологического наследия", "144004020000": "Для размещения военных и гражданских захоронений", "144005000000": "Для размещения иных особо охраняемых историко-культурных и природных объектов (территорий)", "145000000000": "Для размещения объектов лесного фонда", "145001000000": "Для размещения лесной растительности", "145002000000": "Для восстановления лесной растительности", "145003000000": "Для прочих объектов лесного хозяйства", "146000000000": "Для размещения объектов водного фонда", "146001000000": "Под водными объектами", "146002000000": "Для размещения гидротехнических сооружений", "146003000000": "Для размещения иных сооружений, расположенных на водных объектах", "147000000000": "Земли запаса (неиспользуемые)", "014001000000": "Земли жилой застройки", "014001001000": "Земли под жилыми домами многоэтажной и повышенной этажности застройки", "014001002000": "Земли под домами индивидуальной жилой застройкой", "014001003000": "Незанятые земли, отведенные под жилую застройку", "014002000000": "Земли общественно-деловой застройки", "014002001000": "Земли гаражей и автостоянок", "014002002000": "Земли под объектами торговли, общественного питания, бытового обслуживания, автозаправочными и газонаполнительными станциями, предприятиями автосервиса", "014002003000": "Земли учреждений и организаций народного образования, земли под объектами здравоохранения и социального обеспечения физической культуры и спорта, культуры и искусства, религиозными объектами", "014002004000": "Земли под административно-управлен-ческими и общественными объектами, земли предприятий, организаций, учреждений финансирования, кредитования, страхования и пенсионного обеспечения", "014002005000": "Земли под зданиями (строениями) рекреации", "014003000000": "Земли под объектами промышленности", "014004000000": "Земли общего пользования (геонимы в поселениях)", "014005000000": "Земли под объектами транспорта, связи, инженерных коммуникаций", "014005001000": "Под объектами железнодорожного транспорта", "014005002000": "Под объектами автомобильного транспорта", "014005003000": "Под объектами морского, внутреннего водного транспорта", "014005004000": "Под объектами воздушного транспорта", "014005005000": "Под объектами иного транспорта, связи, инженерных коммуникаций", "014006000000": "Земли сельскохозяйственного использования", "014006001000": "Земли под крестьянскими (фермерскими) хозяйствами", "014006002000": "Земли под предприятиями, занимающимися сельскохозяйственным производством", "014006003000": "Земли под садоводческими объединениями и индивидуальными садоводами", "014006004000": "Земли под огородническими объединениями и индивидуальными огородниками", "014006005000": "Земли под дачными объединениями", "014006006000": "Земли под личными подсобными хозяйствами", "014006007000": "Земли под служебными наделами", "014006008000": "Земли оленьих пастбищ", "014006009000": "Для других сельскохозяйственных целей", "014007000000": "Земли под лесами в поселениях (в том числе городскими лесами), под древесно-кустарниковой растительностью, не входящей в лесной фонд (в том числе лесопарками, парками, скверами, бульварами)", "014008000000": "Земли, занятые водными объектами, земли водоохранных зон водных объектов, а также земли, выделяемые для установления полос отвода и зон охраны водозаборов, гидротехнических сооружений и иных водохозяйственных сооружений, объектов.", "014009000000": "Земли под военными и иными режимными объектами", "014010000000": "Земли под объектами иного специального назначения", "014011000000": "Земли, не вовлеченные в градостроительную или иную деятельность (земли – резерв)", "014012000000": "Неопределено", "014013000000": "Значение отсутствует" };
+    var CALCULATING = "-";
+    var AREA_TYPES = {
+        "001": "Площадь застройки",
+        "002": "Общая площадь",
+        "003": "Общая площадь без лоджии",
+        "004": "Общая площадь с лоджией",
+        "005": "Жилая площадь",
+        "007": "Основная площадь",
+        "008": "Декларированная площадь",
+        "009": "Уточненная площадь",
+        "010": "Фактическая площадь",
+        "011": "Вспомогательная площадь",
+        "012": "Площадь помещений общего пользования без лоджии",
+        "013": "Площадь помещений общего пользования с лоджией",
+        "014": "Прочие технические помещения без лоджии",
+        "015": "Прочие технические помещения с лоджией",
+        "020": "Застроенная площадь",
+        "021": "Незастроенная площадь",
+        "022": "Значение площади отсутствует"
+    };
+
+    var FORM_RIGHTS = {
+        "100": "частная",
+        "200": "публичная",
+        "300": "«частная и публичная»"
+    };
+
+    var KINDS = {
+        " ": "",//пусто
+        "-1": "002001001000",//ЗУ
+        "building": "002001002000",//Здание
+        "flat": "002001003000",
+        "construction": "002001004000",//Сооружение
+        "2": "002001005000"//Объект незавершенного строительства
+    };
 
     var checkCadastreNumber = function (searchedText) {
         var cadastreNumber = "", url;
@@ -550,6 +1189,7 @@
                         balloonSearch = map.addBalloon();
                         balloonSearch.setPoint(x, y);
                         balloonSearch.setVisible(false);
+
                         html += "<h3>" + "Кадастровые участки" + "</h3><br><div><table style='text-align:left'>";
                         html += "<tr><th>Статус: </th><td>" + test(PARCEL_STATES[parseInt(data["PARCEL_STATUS"]) - 1]) + "</td></tr>";
                         html += "<tr><th>Адрес: </th><td>" + test(data["OBJECT_ADDRESS"]) + "</td></tr>";
@@ -574,6 +1214,7 @@
                         html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_gkn_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ГКН</a><br>';
                         html += '<a target="_blank" href="https://rosreestr.ru/wps/portal/cc_egrp_form_new?KN=' + data["PARCEL_CN"] + '&objKind=002001001000">Запрос о предоставлении сведений ЕГРП</a><br>';
                         html += "</div>";
+
                         balloonSearch.div.innerHTML = html;
                         balloonSearch.setVisible(true);
                         balloonSearch.resize();

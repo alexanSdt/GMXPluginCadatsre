@@ -1,4 +1,4 @@
-/*#loader{
+﻿/*#loader{
 	display: none;
 	width: 100px;
 	height: 100px;
@@ -15,6 +15,52 @@ div[title='Кадастр']{
   height: 23px;
   width: 23px;
   float: right;
+}
+
+.cadastreMapInfoContainer{
+    width: 400px; 
+    max-height: 170px; 
+    overflow-x: hidden; 
+    overflow-y: auto;
+}
+
+.mapInfoContainer{
+    width: 400px;
+    max-height: 170px;
+    overflow-y: auto;
+    overflow-x: hidden; 
+}
+
+.emptyRow{
+    height: 3px;
+}
+
+.getGeom{
+    cursor: pointer; 
+    text-decoration: underline;
+    font-size: 12px;
+    padding-top: 14px;
+}
+
+.smallFont{
+    font-size: 11px !important;
+}
+
+.leftColumn {
+    font-size: 12px;
+    padding-bottom: 2px;
+    padding-right: 7px;
+    width: 50%;
+}
+
+.leftColumn {
+    font-size: 12px;
+}
+
+.cadastreTitle{
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 7px;
 }
 
 .cadastreLeftMenuLabel
