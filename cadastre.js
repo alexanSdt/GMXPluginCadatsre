@@ -864,7 +864,6 @@
     var cadastreServerThematic;
     var dialog, inputCadNum;
     var geometryRequest = null;
-    var fileName = "";
     var checkCadastre;
     var gParams = null;
 
@@ -949,6 +948,11 @@
         }
     };
 
+    //заменяет все вхождения подстроки в строке
+    function replaceAll(src, str1, str2, ignore) {
+        return src.replace(new RegExp(str1.replace(/([\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g, function (c) { return "\\" + c; }), "g" + (ignore ? "i" : "")), str2);
+    };
+
     function showInfoWindow(objectType, feature) {
         $("#loader").hide();
         $("#alert").hide();
@@ -965,10 +969,12 @@
 
         showGeometry(geometry);
 
+        var fileName = replaceAll(feature.attributes[FIELDS.cadastreNumber], ":", "_");
+
         $(".getGeom").click(function () {
             var result = JSON.stringify([{
                 "properties": { "isVisible": true, "text": "" },
-                "geometry": geom
+                "geometry": geometry
             }]);
             sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
                 name: fileName,
@@ -1067,7 +1073,6 @@
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
 
                 var featureSet = data.results;
-                fileName = featureSet[data.results.length - 1].value;
 
                 var objectType = getCadastreObjectType(featureSet[0]);
 
