@@ -1144,6 +1144,8 @@
 
     var cadastreSearch = function (map, value) {
 
+        value = value.trim();
+
         if (checkCadastreNumber(value)) {
 
             var cadType = getCadastreType(value);
@@ -1167,6 +1169,11 @@
                     }
                 }).done(function (data) {
                     $('#loader').hide();
+
+                    if (data.features.length == 0) {
+                        alert("Не найдено.");
+                        return;
+                    }
 
                     var x = converting(data.features[0].attributes.XC, "x"),
                         y = converting(data.features[0].attributes.YC, "y"),
@@ -1201,6 +1208,11 @@
 
                     if (cadastreLayerInfo)
                         cadastreLayerInfo.setVisible(false);
+
+                    if (data.features.length == 0) {
+                        alert("Не найдено.");
+                        return;
+                    }
 
                     geometry = getGeometry(data.features[0].geometry.rings);
 
