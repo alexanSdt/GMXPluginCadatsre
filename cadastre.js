@@ -1311,6 +1311,35 @@
 
     var showGeometry = function (geom) {
         cadastreLayerInfo = gmxAPI.map.addObject();
+
+        //ВНИМАНИЕ! Это смещение работает только для западного полушария где долгота больше 0 градусов.
+        var coords = geom.coordinates;
+
+        if (geom.type == "MULTIPOLYGON") {
+            for (var i = 0; i < coords.length; i++) {
+                var p = coords[i];
+                for (var j = 0; j < p.length; j++) {
+                    var c = p[j];
+                    for (var k = 0; k < c.length; k++) {
+                        if (c[k][0] < 0) {
+                            c[k][0] += 360;
+                        }
+                    }
+
+                }
+            }
+
+        } else if (geom.type == "POLYGON") {
+            for (var i = 0; i < coords.length; i++) {
+                var c = coords[i];
+                for (var j = 0; j < c.length; j++) {
+                    if (c[j][0] < 0) {
+                        c[j][0] += 360;
+                    }
+                }
+            }
+        }
+
         cadastreLayerInfo.setGeometry(geom);
         cadastreLayerInfo.setStyle({
             outline: {
