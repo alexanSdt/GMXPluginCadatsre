@@ -1310,7 +1310,8 @@
         var fnRefreshMap = function () {
             $(cadastreLegend).toggle(!rbNo.checked);
             var mapExtent = map.getVisibleExtent();
-            var queryString = "&bbox=" + (gmxAPI.merc_x(mapExtent.minX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.minY) - dy) + "%2C" + (gmxAPI.merc_x(mapExtent.maxX) - centralMeridian - dx).toString() + "%2C" + (gmxAPI.merc_y(mapExtent.maxY) - dy) + "&bboxSR=" + JSON.stringify(customSRC) + "&imageSR=" + JSON.stringify(customSRC) + "&size=" + map.width() + "," + getHeight() + "&f=image";
+
+            var queryString = "&bbox=" + merc_x(mapExtent.minX).toString() + "%2C" + merc_y(mapExtent.minY) + "%2C" + merc_x(mapExtent.maxX).toString() + "%2C" + merc_y(mapExtent.maxY) + "&size=" + map.width() + "," + getHeight() + "&bboxSR=102100&imageSR=102100&f=image";
 
             var tUrl = cadastreServerThematic + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
 
