@@ -909,6 +909,26 @@
 
     var POLE = 20037508.34;
 
+    function clamp_lon(lon) {
+        if (lon < -180.0)
+            return 360.0 + lon;
+
+        if (lon > 180.0)
+            return -360.0 + lon;
+
+        return lon;
+    };
+
+    function clamp_lat(lat) {
+        if (lat < -90.0)
+            return 180.0 + lat;
+
+        if (lat > 90.0)
+            return -180.0 + lat;
+
+        return lat;
+    };
+
     function merc_x(lon) {
         return lon * POLE / 180;
     };
@@ -988,7 +1008,7 @@
 
     function searchParcelObject(objectType, query) {
         query.f = "json";
-        query.returnGeometry = true;
+        query.returnGeometry = false;
 
         $.ajax(objectType.layerUrl, {
             crossDomain: true,
@@ -1000,8 +1020,10 @@
             data: query
         }).done(function (featureSet) {
             showInfoWindow(objectType, featureSet.features[0]);
-        }
-        ).fail(function () { });
+        }).fail(function () {
+            $('#loader').hide();
+            $("#alert").show();
+        });
     };
 
     function searchObject(objectType, whereClause) {
@@ -1016,14 +1038,16 @@
                 outFields: '*',
                 where: whereClause,
                 f: 'json',
-                returnGeometry: 'true',
+                returnGeometry: 'false',
                 geometryType: 'esriGeometryPoint',
                 spatialRel: 'esriSpatialRelIntersects'
             }
         }).done(function (featureSet) {
             showInfoWindow(objectType, featureSet.features[0]);
-        }
-        ).fail(function () { });
+        }).fail(function () {
+            $('#loader').hide();
+            $("#alert").show();
+        });
     };
 
     var createBalloonInfo = function (x, y, extent, layerId) {
@@ -1043,11 +1067,9 @@
         var mousePosX = x;
         var mousePosY = y;
         balloonInfo.setPoint(mousePosX, mousePosY);
-        mousePosX = gmxAPI.merc_x(mousePosX);
-        mousePosY = gmxAPI.merc_y(mousePosY);
         balloonInfo.setVisible(false);
-        var geoX = merc_x(gmxAPI.from_merc_x(mousePosX - parseFloat(dx).toFixed(2)));
-        var geoY = merc_y(gmxAPI.from_merc_y(mousePosY - parseFloat(dy).toFixed(2)));
+        var geoX = merc_x(clamp_lon(mousePosX));
+        var geoY = merc_y(clamp_lat(mousePosY));
 
         $("#loader").show();
 
@@ -1096,8 +1118,9 @@
                 $("#loader").hide();
                 $("#alert").show();
             }
-        }).fail(function (err) {
-            console.log("Ошибка получения данных: " + err);
+        }).fail(function () {
+            $('#loader').hide();
+            $("#alert").show();
         });
 
         balloonInfo.resize();
@@ -1311,7 +1334,12 @@
             $(cadastreLegend).toggle(!rbNo.checked);
             var mapExtent = map.getVisibleExtent();
 
-            var queryString = "&bbox=" + merc_x(mapExtent.minX).toString() + "%2C" + merc_y(mapExtent.minY) + "%2C" + merc_x(mapExtent.maxX).toString() + "%2C" + merc_y(mapExtent.maxY) + "&size=" + map.width() + "," + getHeight() + "&bboxSR=102100&imageSR=102100&f=image";
+            var minx = merc_x(mapExtent.minX);
+            var miny = merc_y(mapExtent.minY);
+            var maxx = merc_x(mapExtent.maxX);
+            var maxy = merc_y(mapExtent.maxY);
+
+            var queryString = "&bbox=" + minx + "%2C" + miny + "%2C" + maxx + "%2C" + maxy + "&size=" + map.width() + "," + getHeight() + "&bboxSR=102100&imageSR=102100&f=image";
 
             var tUrl = cadastreServerThematic + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32" + queryString;
 
