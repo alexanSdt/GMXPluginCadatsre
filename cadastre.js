@@ -856,7 +856,7 @@
     };
 
     var dx, dy, map;
-    var mapListenerInfo, cadastreLayerListener, cadastreLayerSearchListener; // Listener для идентификации кадастрового участка на карте
+    var mapListenerInfo, mapListenerInfoRight, cadastreLayerListener, cadastreLayerSearchListener; // Listener для идентификации кадастрового участка на карте
     var balloonInfo, balloonSearch; // balloon для идентификации и поиска кадастрового участка на карте
     var geometry;// геометрия выделенного участка
     var cadastreLayerInfo, cadastreLayerSearch, cadastreLayer, cadastreLayerRight;
@@ -1433,6 +1433,8 @@
                     balloonInfo.remove();
                 if (mapListenerInfo)
                     map.removeListener("onClick", mapListenerInfo);
+                if (mapListenerInfoRight)
+                    map.removeListener("onClick", mapListenerInfoRight);
                 if (cadastreLayerListener)
                     map.removeListener("onMoveEnd", cadastreLayerListener);
                 if (balloonSearch)
@@ -1498,7 +1500,7 @@
             cadastreLayer.setDepth(1000);
             cadastreLayerRight.setDepth(1000);
         }
-        var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors, costLayer, costByAreaLayer, useTypeLayer, categoryLayer, mapUpdateLayer, mapVisitorsLayer;
+        var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
         var thmtLayer, thmtLayerRight;
         var div = _div(null, [['dir', 'className', 'cadastreLeftMenuContainer']]);
         var trs = [];
@@ -1603,10 +1605,10 @@
             $("#loader").hide();
             gmxAPI._tools.standart.removeTool('cadastreInfo');
             gmxAPI._tools.standart.removeTool('cadastreDx');
-            if (mapListenerInfo) {
+            if (mapListenerInfo)
                 cadastreLayer.removeListener('onClick', mapListenerInfo);
-                cadastreLayerRight.removeListener('onClick', mapListenerInfo);
-            }
+            if (mapListenerInfoRight)
+                cadastreLayerRight.removeListener('onClick', mapListenerInfoRight);
             if (cadastreLayerListener)
                 map.removeListener("onMoveEnd", cadastreLayerListener);
             if (iListenerID)
@@ -1643,6 +1645,27 @@
             fnRefreshMap();
         }
     }
+
+    function onCadastreLayerClick() {
+        var mousePosX = map.getMouseX();
+        var mousePosY = map.getMouseY();
+        var extent = map.getVisibleExtent();
+        if (balloonSearch) {
+            balloonSearch.remove();
+            balloonSearch = false;
+        }
+        if (cadastreLayerSearch)
+            cadastreLayerSearch.setVisible(false);
+
+        if (!balloonInfo || !balloonInfo.isVisible) {
+            createBalloonInfo(mousePosX, mousePosY, extent, "");
+        } else {
+            balloonInfo.remove();
+            balloonInfo = false;
+            cadastreLayerInfo.remove();
+            createBalloonInfo(mousePosX, mousePosY, extent, "");
+        }
+    };
 
     var addCadastreInfoTool = function () {
         map = gmxAPI.map;
@@ -1693,30 +1716,18 @@
             'activeImageUrl': gmxCore.getModulePath("cadastre") + "information_active.png",
             'onClick': function () {
                 mapListenerInfo = cadastreLayer.addListener("onClick", function (e) {
-                    var mousePosX = map.getMouseX();
-                    var mousePosY = map.getMouseY();
-                    var extent = map.getVisibleExtent();
-                    if (balloonSearch) {
-                        balloonSearch.remove();
-                        balloonSearch = false;
-                    }
-                    if (cadastreLayerSearch)
-                        cadastreLayerSearch.setVisible(false);
-
-                    if (!balloonInfo || !balloonInfo.isVisible) {
-                        createBalloonInfo(mousePosX, mousePosY, extent, "");
-                    } else {
-                        balloonInfo.remove();
-                        balloonInfo = false;
-                        cadastreLayerInfo.remove();
-                        createBalloonInfo(mousePosX, mousePosY, extent, "");
-                    }
+                    onCadastreLayerClick();
+                });
+                mapListenerInfoRight = cadastreLayerRight.addListener("onClick", function (e) {
+                    onCadastreLayerClick();
                 });
             },
             'onCancel': function () {
                 gmxAPI._tools.standart.selectTool("move");
                 if (mapListenerInfo)
                     cadastreLayer.removeListener("onClick", mapListenerInfo);
+                if (mapListenerInfoRight)
+                    cadastreLayerRight.removeListener("onClick", mapListenerInfoRight);
                 if (cadastreLayerListener)
                     map.removeListener("onMoveEnd", cadastreLayerListener);
                 if (cadastreLayerInfo)
@@ -1778,6 +1789,8 @@
                 }
                 if (mapListenerInfo)
                     gmxAPI.map.removeListener("onClick", mapListenerInfo);
+                if (mapListenerInfoRight)
+                    gmxAPI.map.removeListener("onClick", mapListenerInfoRight);
                 if (cadastreMenu)
                     $(cadastreMenu.parentWorkCanvas).remove();
                 if (balloonSearch) {
