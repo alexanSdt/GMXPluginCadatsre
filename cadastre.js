@@ -1447,6 +1447,8 @@
                     cadastreLayerSearch.setVisible(false);
                 if (cadastreLayer)
                     cadastreLayer.setVisible(false);
+                if (cadastreLayerRight)
+                    cadastreLayerRight.setVisible(false);
             }
 
             var tUrl = cadastreServerThematic + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32";;
@@ -1488,21 +1490,23 @@
                 thmtChecked = true;
             }
 
-            thmtLayer.setImageExtent({ url: tUrl + queryStringLeft, extent: ((!e180 && extentLeft.maxX < 0) ? transformExtentRight(extentLeft) : extentLeft), noCache: true });
             thmtLayer.setVisible(thmtChecked);
-            thmtLayerRight.setVisible(thmtChecked);
+            if (thmtChecked) {
+                thmtLayer.setImageExtent({ url: tUrl + queryStringLeft, extent: ((!e180 && extentLeft.maxX < 0) ? transformExtentRight(extentLeft) : extentLeft), noCache: true });
+                thmtLayerRight.setVisible(thmtChecked);
 
-            if (e180) {
-                thmtLayerRight.setImageExtent({
-                    url: tUrl + queryStringRight, extent: transformExtentRight(extentRight), noCache: true
-                });
+                if (e180) {
+                    thmtLayerRight.setImageExtent({
+                        url: tUrl + queryStringRight, extent: transformExtentRight(extentRight), noCache: true
+                    });
+                }
             }
+
+            cadastreLayer.setDepth(1000);
+            cadastreLayerRight.setDepth(950);
 
             cadastreLayer.setVisible(cbDivision.checked);
             cadastreLayerRight.setVisible(cbDivision.checked);
-
-            cadastreLayer.setDepth(1000);
-            cadastreLayerRight.setDepth(1000);
         }
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
         var thmtLayer, thmtLayerRight;
