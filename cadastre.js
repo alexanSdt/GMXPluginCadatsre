@@ -1248,11 +1248,15 @@
                         maxY = converting(data.features[0].attributes.YMAX, "y"),
                         minY = converting(data.features[0].attributes.YMIN, "y");
 
+                    if (minX < 0) {
+                        minX += 360;
+                        maxX += 360;
+                    }
                     map.zoomToExtent(minX, minY, maxX, maxY);
 
                     var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
                     balloonInfo = map.addBalloon();
-                    balloonInfo.setPoint(converting(findInfo["XC"], "x"), converting(findInfo["YC"], "y"));
+                    balloonInfo.setPoint((x < 0 ? x + 360 : x), y);
                     balloonInfo.setVisible(false);
 
                     showInfoWindow(cadType, data.features[0]);
@@ -1644,7 +1648,7 @@
             $(cbDivision).prop('checked', isVisible);
             fnRefreshMap();
         }
-    }
+    };
 
     function onCadastreLayerClick() {
         var mousePosX = map.getMouseX();
