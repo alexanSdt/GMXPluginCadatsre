@@ -1398,16 +1398,22 @@
                 extentLeft = { minX: extent.minX, minY: extent.minY, maxX: 180, maxY: extent.maxY };
                 extentRight = { minX: -180, minY: extent.minY, maxX: clamp_lon(extent.maxX), maxY: extent.maxY };
 
-                queryStringRight = "&bbox=" + merc_x(extentRight.minX) + "%2C" + merc_y(extentRight.minY) + "%2C" +
-                    merc_x(extentRight.maxX) + "%2C" + merc_y(extentRight.maxY) + "&size=" + widthRight + "," + getHeight() +
-                    "&bboxSR=102100&imageSR=102100&f=image";
+                //queryStringRight = "&bbox=" + merc_x(extentRight.minX) + "%2C" + merc_y(extentRight.minY) + "%2C" +
+                //    merc_x(extentRight.maxX) + "%2C" + merc_y(extentRight.maxY) + "&size=" + widthRight + "," + getHeight() +
+                //    "&bboxSR=102100&imageSR=102100&f=image";
+                queryStringRight = "&bbox=" + extentRight.minX + "%2C" + extentRight.minY + "%2C" +
+                    extentRight.maxX + "%2C" + extentRight.maxY + "&size=" + widthRight + "," + getHeight() +
+                    "&bboxSR=4326&imageSR=102100&f=image";
             } else {
                 extentLeft = extent;
             }
 
-            queryStringLeft = "&bbox=" + merc_x(extentLeft.minX) + "%2C" + merc_y(extentLeft.minY) + "%2C" +
-                merc_x(extentLeft.maxX) + "%2C" + merc_y(extentLeft.maxY) + "&size=" + (e180 ? widthLeft : map.width()) + "," + getHeight() +
-                "&bboxSR=102100&imageSR=102100&f=image";
+            //queryStringLeft = "&bbox=" + merc_x(extentLeft.minX) + "%2C" + merc_y(extentLeft.minY) + "%2C" +
+            //    merc_x(extentLeft.maxX) + "%2C" + merc_y(extentLeft.maxY) + "&size=" + (e180 ? widthLeft : map.width()) + "," + getHeight() +
+            //    "&bboxSR=102100&imageSR=102100&f=image";
+            queryStringLeft = "&bbox=" + extentLeft.minX + "%2C" + extentLeft.minY + "%2C" +
+                extentLeft.maxX + "%2C" + extentLeft.maxY + "&size=" + (e180 ? widthLeft : map.width()) + "," + getHeight() +
+                "&bboxSR=4326&imageSR=102100&f=image";
 
             if (cbDivision.checked) {
                 $("#loader").show();
@@ -1506,7 +1512,7 @@
             cadastreLayerRight.setDepth(950);
 
             cadastreLayer.setVisible(cbDivision.checked);
-            cadastreLayerRight.setVisible(cbDivision.checked);
+            cadastreLayerRight.setVisible(cbDivision.checked && e180);
         }
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
         var thmtLayer, thmtLayerRight;
