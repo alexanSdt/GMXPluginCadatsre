@@ -1,0 +1,282 @@
+var ShowExt = function () {
+    this.imageLayers = [];
+    this.imagesExtentCache = {};
+    this._queryCounter = 0;
+    this._listeners = {};
+    this._visible = false;
+};
+
+ShowExt.READY = 100;
+ShowExt.EMPTY = 101;
+ShowExt.LOADING = 102;
+
+ShowExt.worldsCount = 7;
+ShowExt.buildWorlds = function (count) {
+    var arr = [];
+    var start = -count * 180;
+    for (var i = 0; i < count; i++) {
+        var d = i * 360;
+        var min = start + d,
+            max = start + 360 + d;
+        var seg = { "min": min, "max": max, center: min + (max - min) * 0.5 };
+        arr.push(seg);
+    }
+    return arr;
+};
+
+ShowExt._worlds = ShowExt.buildWorlds(ShowExt.worldsCount);
+
+ShowExt.NORTH_LIMIT = 83.0;//gmxAPI.from_merc_y(gmxAPI.merc_x(180.0));
+ShowExt.SOUTH_LIMIT = -ShowExt.NORTH_LIMIT;
+
+ShowExt.prototype.initialize = function () {
+    this._queryCounter = 0;
+    for (var i = 0; i < ShowExt.worldsCount; i++) {
+        if (!this.imageLayers[i])
+            this.imageLayers[i] = gmxAPI.map.addObject();
+    }
+};
+
+ShowExt.prototype.clearImagesCache = function () {
+    for (var c in this.imagesExtentCache) {
+        this.imagesExtentCache[c].imageObject = null;
+        this.imagesExtentCache[c] = null;
+    }
+    this.imagesExtentCache = null;
+    this.imagesExtentCache = {};
+};
+
+ShowExt.prototype.addListener = function (eventName, callback) {
+    for (var i = 0; i < this.imageLayers.length; i++) {
+        if (this.imageLayers[i]) {
+            if (!this._listeners[eventName]) {
+                this._listeners[eventName] = [];
+            }
+            this._listeners[eventName][i] = this.imageLayers[i].addListener(eventName, callback);
+        }
+    }
+};
+
+ShowExt.prototype.removeListener = function (eventName) {
+    if (this._listeners[eventName] &&
+        this._listeners[eventName].length) {
+        for (var i = 0; i < this.imageLayers.length; i++) {
+            if (this.imageLayers[i])
+                this.imageLayers[i].removeListener(eventName, this._listeners[eventName][i]);
+        }
+        this._listeners[eventName].length = 0;
+    }
+};
+
+ShowExt.prototype.setVisibility = function (visibility) {
+    this._visible = visibility;
+    for (var i = 0; i < this.imageLayers.length; i++) {
+        if (this.imageLayers[i])
+            this.imageLayers[i].setVisible(visibility);
+    }
+};
+
+ShowExt.prototype.setCopyright = function (html) {
+    this.imageLayers[0].setCopyright(html);
+};
+
+ShowExt.prototype.setDepth = function (depth) {
+    for (var i = 0; i < this.imageLayers.length; i++) {
+        if (this.imageLayers[i])
+            this.imageLayers[i].setDepth(depth);
+    }
+};
+
+ShowExt.prototype.remove = function () {
+    for (var l in this._listeners) {
+        this.removeListener(l);
+    }
+
+    for (var i = 0; i < this.imageLayers.length; i++) {
+        if (this.imageLayers[i]) {
+            this.imageLayers[i].remove();
+            this.imageLayers[i] = null;
+        }
+    }
+};
+
+ShowExt.replaceTemplate = function (template, params) {
+    return template.replace(/{[^{}]+}/g, function (key) {
+        return params[key.replace(/[{}]+/g, "")] || "";
+    });
+};
+
+ShowExt.getUrlCadastre = function (urlTemplate, imageExtent) {
+    var extent = imageExtent.normalExtent,
+        size = imageExtent.imageSize;
+
+    return ShowExt.replaceTemplate(urlTemplate, {
+        "minX": extent.minX, "minY": extent.minY,
+        "maxX": extent.maxX, "maxY": extent.maxY,
+        "width": size.width, "height": size.height
+    });
+};
+
+//загружает и показывает экстенты всех миров отображаемых на экране
+ShowExt.prototype.showScreenExtent = function (urlTemplate, callback) {
+
+    var extents = ShowExt.getImagesExtents();
+
+    for (var i = 0; i < extents.length; i++) {
+        var img = new Image();
+        ext = extents[i];
+        this._setImagesExtents(urlTemplate, img, ext, i, callback);
+    }
+};
+
+ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, index, callback) {
+    var addr = ShowExt.getCacheString(imageExtent);
+
+    if (this.imagesExtentCache[addr] && this.imagesExtentCache[addr].status == ShowExt.READY) {
+
+        this.imageLayers[index].setImageExtent({
+            "image": this.imagesExtentCache[addr].imageObject,
+            "extent": imageExtent.globalExtent
+        });
+
+    } else {
+        var that = this;
+        img.onload = function () {
+            that._queryCounter--;
+            that.imagesExtentCache[addr].imageObject = this;
+            that.imagesExtentCache[addr].status = ShowExt.READY;
+
+            that.imageLayers[index].setImageExtent({
+                "image": this,
+                "extent": imageExtent.globalExtent
+            });
+
+            if (that._queryCounter == 0) {
+                if (callback)
+                    callback();
+            }
+        };
+
+        img.onerror = function (err) {
+            that._queryCounter--;
+            console.log(err);
+            that.imagesExtentCache[addr].imageObject = null;
+            that.imagesExtentCache[addr].status = ShowExt.EMPTY;
+            if (that._queryCounter == 0) {
+                if (callback)
+                    callback();
+            }
+        };
+
+        this.imagesExtentCache[addr] = { "imageObject": img, "imageExtent": imageExtent, "status": ShowExt.LOADING };
+        this._queryCounter++;
+        img.src = ShowExt.getUrlCadastre(urlTemplate, imageExtent);
+    }
+
+    if (this._queryCounter == 0) {
+        if (callback)
+            callback();
+    }
+};
+
+//кешрующая строка для запроса по экстенту и размерам картинки
+ShowExt.getCacheString = function (imageExtent) {
+    var extent = imageExtent.normalExtent,
+        size = imageExtent.imageSize;
+
+    return extent.minX + "_" + extent.minY + "_" + extent.maxX + "_" + extent.maxY + "_" + size.width + "_" + size.height;
+};
+
+//Возвращает размеры изображения по долготе, по его начальной и конечной координате на экране
+ShowExt.getImageHeight = function (lat_min, lat_max) {
+    return ShowExt.merc_to_size(gmxAPI.merc_y(lat_max) - gmxAPI.merc_y(lat_min));
+};
+
+//Возвращает размеры изображения по широте, по его начальной и конечной координате на экране
+ShowExt.getImageWidth = function (lon_min, lon_max) {
+    return ShowExt.merc_to_size(gmxAPI.merc_x(lon_max) - gmxAPI.merc_x(lon_min));
+};
+
+
+ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world) {
+    var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
+        norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
+    return {
+        "imageSize": {
+            "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+            "height": ShowExt.getImageHeight(lat_min, lat_max)
+        },
+        "globalExtent": {
+            "minX": lon_min, "minY": lat_min, "maxX": lon_max, "maxY": lat_max
+        },
+        "normalExtent": {
+            "minX": norm_lon_min, "minY": lat_min, "maxX": norm_lon_max, "maxY": lat_max
+        }
+    };
+};
+
+//возвращает границы и соотвтетсвующие размеры изображений, которые сейчас видны на экране
+//P.S. это как-бы расширенная версия функции ShowExt.getWorldsOnTheScreen()
+ShowExt.getImagesExtents = function () {
+    var ext = gmxAPI._leaflet.LMap.getBounds();
+    var north_lim = ext._northEast.lat > ShowExt.NORTH_LIMIT ? ShowExt.NORTH_LIMIT : ext._northEast.lat,
+        south_lim = ext._southWest.lat < ShowExt.SOUTH_LIMIT ? ShowExt.SOUTH_LIMIT : ext._southWest.lat;
+
+    var screenWorlds = ShowExt.getWorldsOnTheScreen();
+    var res = [];
+
+    if (screenWorlds.length == 1) {
+        res.push(ShowExt.createImageExtent(ext._southWest.lng, south_lim, ext._northEast.lng, north_lim, screenWorlds[0]));
+    } else {
+        for (var i = 0; i < screenWorlds.length; i++) {
+            var swi = screenWorlds[i];
+            var lon_min, lon_max;
+
+            if (i == 0) {
+                lon_min = ext._southWest.lng;
+                lon_max = swi.max;
+            } else if (i == screenWorlds.length - 1) {
+                lon_min = swi.min;
+                lon_max = ext._northEast.lng;
+            } else {
+                lon_min = swi.min;
+                lon_max = swi.max;
+            }
+
+            res.push(ShowExt.createImageExtent(lon_min, south_lim, lon_max, north_lim, swi));
+        }
+    }
+
+    return res;
+};
+
+//возвращает миры, которые в данный момент видны на экране
+ShowExt.getWorldsOnTheScreen = function () {
+    var ext = gmxAPI._leaflet.LMap.getBounds();
+    var minLng = ext._southWest.lng,
+        maxLng = ext._northEast.lng;
+    var res = [];
+    var w = ShowExt._worlds;
+    for (i = 0; i < w.length; i++) {
+        if (w[i].min >= minLng && w[i].max <= maxLng ||
+            w[i].max > minLng && w[i].min < minLng ||
+            w[i].min < maxLng && w[i].max >= maxLng) {
+            res.push(w[i]);
+        }
+    }
+    return res;
+};
+
+ShowExt.coordsToWorld = function (lonlat, worldIndex) {
+    return [ShowExt._worlds[worldIndex].center + lonlat.lon, lonlat[1]];
+};
+
+//Нормализует долготу к периоду -pi до pi
+ShowExt.norm_lon = function (deg, worldMin) {
+    return -180 + deg - worldMin;
+};
+
+//возвращает кол-во экранных пикселей по размерам в меркаторе на карте.
+ShowExt.merc_to_size = function (size) {
+    return Math.round(size / gmxAPI.getScale(gmxAPI.map.getZ()));
+};

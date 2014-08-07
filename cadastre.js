@@ -866,6 +866,7 @@
     var geometryRequest = null;
     var checkCadastre;
     var gParams = null;
+    var infoClickSelected = false;
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -1358,16 +1359,6 @@
         });
     };
 
-    function checkE180(extent) {
-        if (extent.minX < 180 && extent.maxX > 180)
-            return true;
-        return false;
-    };
-
-    function transformExtentRight(extent) {
-        return { minX: extent.minX + 360, minY: extent.minY, maxX: extent.maxX + 360, maxY: extent.maxY };
-    }
-
     var Cadastre = function (container, addInfoTools) {
         cadastreLayerSearch = gmxAPI.map.addObject();
         var map = gmxAPI.map;
@@ -1376,58 +1367,21 @@
         var fnRefreshMap = function () {
             $(cadastreLegend).toggle(!rbNo.checked);
 
-            var extent = map.getVisibleExtent();
-
-            //проверяем что экстент экрана пересекает 180 гр.
-            var e180 = checkE180(extent);
-
-            //создаем две области для запроса на сервер. Первая до 180 вторая после.
-            var widthLeft, widthRight;
-            var extentLeft, extentRight;
-            var queryStringLeft, queryStringRight;
-
-            if (e180) {
-                var zoom = gmxAPI.map.getZ();
-                var scale = gmxAPI.getScale(zoom);
-                var par180 = gmxAPI.merc_x(180);
-                //для левее 180
-                widthLeft = Math.round((par180 - gmxAPI.merc_x(extent.minX)) / scale);
-                //для правее 180
-                widthRight = Math.round((gmxAPI.merc_x(extent.maxX) - par180) / scale);
-
-                extentLeft = { minX: extent.minX, minY: extent.minY, maxX: 180, maxY: extent.maxY };
-                extentRight = { minX: -180, minY: extent.minY, maxX: clamp_lon(extent.maxX), maxY: extent.maxY };
-
-                //queryStringRight = "&bbox=" + merc_x(extentRight.minX) + "%2C" + merc_y(extentRight.minY) + "%2C" +
-                //    merc_x(extentRight.maxX) + "%2C" + merc_y(extentRight.maxY) + "&size=" + widthRight + "," + getHeight() +
-                //    "&bboxSR=102100&imageSR=102100&f=image";
-                queryStringRight = "&bbox=" + extentRight.minX + "%2C" + extentRight.minY + "%2C" +
-                    extentRight.maxX + "%2C" + extentRight.maxY + "&size=" + widthRight + "," + getHeight() +
-                    "&bboxSR=4326&imageSR=102100&f=image";
-            } else {
-                extentLeft = extent;
-            }
-
-            //queryStringLeft = "&bbox=" + merc_x(extentLeft.minX) + "%2C" + merc_y(extentLeft.minY) + "%2C" +
-            //    merc_x(extentLeft.maxX) + "%2C" + merc_y(extentLeft.maxY) + "&size=" + (e180 ? widthLeft : map.width()) + "," + getHeight() +
-            //    "&bboxSR=102100&imageSR=102100&f=image";
-            queryStringLeft = "&bbox=" + extentLeft.minX + "%2C" + extentLeft.minY + "%2C" +
-                extentLeft.maxX + "%2C" + extentLeft.maxY + "&size=" + (e180 ? widthLeft : map.width()) + "," + getHeight() +
-                "&bboxSR=4326&imageSR=102100&f=image";
-
             if (cbDivision.checked) {
                 $("#loader").show();
-                cadastreLayer.setImageExtent({
-                    url: cadastreServer + "Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32" +
-                        queryStringLeft, extent: ((!e180 && extentLeft.maxX < 0) ? transformExtentRight(extentLeft) : extentLeft), noCache: true
+
+                cadastreShowExt.remove();
+                cadastreShowExt.initialize();
+                if (infoClickSelected)
+                    cadastreShowExt.addListener("onClick", function (e) { onCadastreLayerClick(); });
+
+                var cadastreUrlTemplate = "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=4326&imageSR=102100&f=image";
+                cadastreShowExt.showScreenExtent(cadastreUrlTemplate, function () {
+                    $("#loader").hide();
                 });
-                if (e180) {
-                    cadastreLayerRight.setImageExtent({
-                        url: cadastreServer + "Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32" +
-                            queryStringRight, extent: transformExtentRight(extentRight), noCache: true
-                    });
-                }
-                cadastreLayer.setCopyright('<a href="http://rosreestr.ru">© Росреестр</a>');
+
+                cadastreShowExt.setCopyright('<a href="http://rosreestr.ru">© Росреестр</a>');
+
                 addInfoTools && addCadastreInfoTool();
                 gmxAPI._tools.standart.setVisible(true);
             } else {
@@ -1451,10 +1405,8 @@
                     balloonSearch.remove();
                 if (cadastreLayerSearch)
                     cadastreLayerSearch.setVisible(false);
-                if (cadastreLayer)
-                    cadastreLayer.setVisible(false);
-                if (cadastreLayerRight)
-                    cadastreLayerRight.setVisible(false);
+
+                cadastreShowExt.setVisibility(false);
             }
 
             var tUrl = cadastreServerThematic + "Cadastre/Thematic/MapServer/export?dpi=96&transparent=true&format=png32";;
@@ -1496,23 +1448,18 @@
                 thmtChecked = true;
             }
 
-            thmtLayer.setVisible(thmtChecked);
+            thematicShowExt.setVisibility(thmtChecked);
             if (thmtChecked) {
-                thmtLayer.setImageExtent({ url: tUrl + queryStringLeft, extent: ((!e180 && extentLeft.maxX < 0) ? transformExtentRight(extentLeft) : extentLeft), noCache: true });
-                thmtLayerRight.setVisible(thmtChecked);
-
-                if (e180) {
-                    thmtLayerRight.setImageExtent({
-                        url: tUrl + queryStringRight, extent: transformExtentRight(extentRight), noCache: true
-                    });
-                }
+                thematicShowExt.remove();
+                thematicShowExt.clearImagesCache();
+                thematicShowExt.initialize();
+                thematicShowExt.showScreenExtent(tUrl + "&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=4326&imageSR=102100&f=image");
             }
 
-            cadastreLayer.setDepth(1000);
-            cadastreLayerRight.setDepth(950);
+            thematicShowExt.setDepth(950);
 
-            cadastreLayer.setVisible(cbDivision.checked);
-            cadastreLayerRight.setVisible(cbDivision.checked && e180);
+            cadastreShowExt.setDepth(1000);
+            cadastreShowExt.setVisibility(cbDivision.checked);
         }
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
         var thmtLayer, thmtLayerRight;
@@ -1576,7 +1523,7 @@
         thmtLayer = this.mapObject.addObject(null, { type: 'Overlay' });
         thmtLayerRight = this.mapObject.addObject(null, { type: 'Overlay' });
         cadastreLayer = this.mapObject.addObject();
-        cadastreLayerRight = this.mapObject.addObject();
+        //cadastreLayerRight = this.mapObject.addObject();
 
         thmtLayer.addListener('onImageLoad', function (e) {
             $("#loader").hide();
@@ -1587,21 +1534,11 @@
             $("#alert").show();
         });
 
-
-        cadastreLayer.addListener('onImageLoad', function (e) {
-            $("#loader").hide();
-            $("#alert").hide();
-        });
-        cadastreLayer.addListener('onImageError', function (e) {
-            $("#loader").hide();
-            $("#alert").show();
-        });
-
         var iListenerID = -1;
 
         this.load = function () {
-            cadastreLayer.setVisible(cbDivision.checked);
-            cadastreLayerRight.setVisible(cbDivision.checked);
+            cadastreShowExt.initialize();
+            cadastreShowExt.setVisibility(cbDivision.checked);
 
             iListenerID = gmxAPI.map.addListener("onMoveEnd", fnRefreshMap);
             fnRefreshMap();
@@ -1629,14 +1566,16 @@
                 map.removeListener("onMoveEnd", iListenerID);
             if (cadastreLayerInfo)
                 cadastreLayerInfo.remove();
-            if (cadastreLayer)
-                cadastreLayer.remove();
-            if (cadastreLayerRight)
-                cadastreLayerRight.remove();
-            if (thmtLayer)
-                thmtLayer.remove();
-            if (thmtLayerRight)
-                thmtLayerRight.remove();
+
+            cadastreShowExt.remove();
+            infoClickSelected = false;
+
+            thematicShowExt.remove();
+
+            //if (thmtLayer)
+            //    thmtLayer.remove();
+            //if (thmtLayerRight)
+            //    thmtLayerRight.remove();
 
             if (balloonInfo) {
                 balloonInfo.remove();
@@ -1729,19 +1668,17 @@
             'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
             'activeImageUrl': gmxCore.getModulePath("cadastre") + "information_active.png",
             'onClick': function () {
-                mapListenerInfo = cadastreLayer.addListener("onClick", function (e) {
-                    onCadastreLayerClick();
-                });
-                mapListenerInfoRight = cadastreLayerRight.addListener("onClick", function (e) {
-                    onCadastreLayerClick();
-                });
+
+                cadastreShowExt.addListener("onClick", function (e) { onCadastreLayerClick(); });
+                infoClickSelected = true;
+
             },
             'onCancel': function () {
+                infoClickSelected = false;
                 gmxAPI._tools.standart.selectTool("move");
-                if (mapListenerInfo)
-                    cadastreLayer.removeListener("onClick", mapListenerInfo);
-                if (mapListenerInfoRight)
-                    cadastreLayerRight.removeListener("onClick", mapListenerInfoRight);
+
+                cadastreShowExt.removeListener("onclick");
+
                 if (cadastreLayerListener)
                     map.removeListener("onMoveEnd", cadastreLayerListener);
                 if (cadastreLayerInfo)
@@ -1836,6 +1773,9 @@
             }
 
             gParams.initCadastre && this._onClickCadastreTools();
+
+            cadastreShowExt = new ShowExt();
+            thematicShowExt = new ShowExt();
         },
 
         _onClickCadastreTools: function () {
@@ -1894,6 +1834,11 @@
     }
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
+        init: function (module, path) {
+            return $.when(
+                gmxCore.loadScript(path + "showExt.js")
+            );
+        },
         css: "cadastre.css"
     });
 
