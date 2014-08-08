@@ -911,13 +911,7 @@
     var POLE = 20037508.34;
 
     function clamp_lon(lon) {
-        if (lon < -180.0)
-            return 360.0 + lon;
-
-        if (lon > 180.0)
-            return -360.0 + lon;
-
-        return lon;
+        return ShowExt.norm_lon(lon, ShowExt.getWorldByLon(lon).min);
     };
 
     function clamp_lat(lat) {
@@ -988,7 +982,8 @@
 
         balloonInfo.div.innerHTML = title + content + dwnld;
 
-        showGeometry(geometry);
+        var world = ShowExt.getWorldByLon(balloonInfo.getX());
+        showGeometry(geometry, world, balloonInfo.getX());
 
         var fileName = replaceAll(feature.attributes[FIELDS.cadastreNumber], ":", "_");
 
@@ -1314,10 +1309,9 @@
         return geom;
     };
 
-    var showGeometry = function (geom) {
+    var showGeometry = function (geom, world, centerX) {
         cadastreLayerInfo = gmxAPI.map.addObject();
 
-        //ВНИМАНИЕ! Это смещение работает только для западного полушария где долгота больше 0 градусов.
         var coords = geom.coordinates;
 
         if (geom.type == "MULTIPOLYGON") {
@@ -1326,9 +1320,17 @@
                 for (var j = 0; j < p.length; j++) {
                     var c = p[j];
                     for (var k = 0; k < c.length; k++) {
+
+                        var x;
+                        if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
+                            x = world.max;
+                        else
+                            x = world.min;
+
                         if (c[k][0] < 0) {
-                            c[k][0] += 360;
-                        }
+                            c[k][0] += x + 180;
+                        } else
+                            c[k][0] += x - 180;
                     }
 
                 }
@@ -1338,9 +1340,17 @@
             for (var i = 0; i < coords.length; i++) {
                 var c = coords[i];
                 for (var j = 0; j < c.length; j++) {
+
+                    var x;
+                    if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
+                        x = world.max;
+                    else
+                        x = world.min;
+
                     if (c[j][0] < 0) {
-                        c[j][0] += 360;
-                    }
+                        c[j][0] += x + 180;
+                    } else
+                        c[j][0] += x - 180;
                 }
             }
         }

@@ -24,6 +24,13 @@ ShowExt.buildWorlds = function (count) {
     return arr;
 };
 
+ShowExt.getWorldByLon = function (lon) {
+    for (var i = 0; i < ShowExt._worlds.length; i++) {
+        if (ShowExt._worlds[i].min <= lon && lon <= ShowExt._worlds[i].max)
+            return ShowExt._worlds[i];
+    }
+};
+
 ShowExt._worlds = ShowExt.buildWorlds(ShowExt.worldsCount);
 
 ShowExt.NORTH_LIMIT = 83.0;//gmxAPI.from_merc_y(gmxAPI.merc_x(180.0));
