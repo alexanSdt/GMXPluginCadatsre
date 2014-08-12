@@ -4,6 +4,7 @@ var ShowExt = function () {
     this._queryCounter = 0;
     this._listeners = {};
     this._visible = false;
+    this._images = [];
 };
 
 ShowExt.READY = 100;
@@ -136,6 +137,15 @@ ShowExt.prototype.showScreenExtent = function (urlTemplate, callback) {
     }
 };
 
+ShowExt.prototype.abortLoading = function () {
+    var imgs = this._images;
+    var i = imgs.length;
+    while (i--) {
+        imgs[i].src = "";
+    }
+    imgs.length = 0;
+};
+
 ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, index, callback) {
     var addr = ShowExt.getCacheString(imageExtent);
 
@@ -159,6 +169,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             });
 
             if (that._queryCounter == 0) {
+                that._images.length = 0;
                 if (callback)
                     callback();
             }
@@ -170,12 +181,15 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             that.imagesExtentCache[addr].imageObject = null;
             that.imagesExtentCache[addr].status = ShowExt.EMPTY;
             if (that._queryCounter == 0) {
+                that._images.length = 0;
                 if (callback)
                     callback();
             }
         };
 
-        this.imagesExtentCache[addr] = { "imageObject": img, "imageExtent": imageExtent, "status": ShowExt.LOADING };
+        this._images.push(img);
+
+        this.imagesExtentCache[addr] = { "imageObject": null, "imageExtent": imageExtent, "status": ShowExt.LOADING };
         this._queryCounter++;
         img.src = ShowExt.getUrlCadastre(urlTemplate, imageExtent);
     }
