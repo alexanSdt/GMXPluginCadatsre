@@ -1,4 +1,5 @@
 ﻿(function () {
+
     var CadastreTypes = {
         okrug: {
             fieldId: "PKK_ID",
@@ -464,7 +465,6 @@
         }
     };
 
-    var _okrugDateAjaxQuery;
     function searchOkrugDate(okrugNumber) {
         var query = {};
         query.where = FIELDS.cadastreOkrugId + " like '" + okrugNumber + "%'";
@@ -472,7 +472,7 @@
         query.outFields = "ONLINE_ACTUAL_DATE,ACTUAL_DATE";
         query.f = "json";
 
-        _okrugDateAjaxQuery = $.ajax(CadastreTypes.okrug.layerUrl + "/query", {
+        aj.ajax(CadastreTypes.okrug.layerUrl + "/query", {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -480,7 +480,7 @@
             dataType: "jsonp",
             jsonpCallback: 'fnsuccesscallback2',
             data: query
-        }).done(function (featureSet) {
+        }, function (featureSet) {
             var attrDate = null;
             var borderDate = null;
             var attrContent;
@@ -504,14 +504,13 @@
             setDateField("actual_date", attrContent);
             setDateField("border_actual_date", borderContent);
 
-        }).fail(function () {
+        }, function () {
             $('#loader').hide();
             $("#alert").show();
         });
 
     };
 
-    var _zoneAjaxQuery;
     function searchZone(point) {
 
         var url = "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/TerrAgencies/MapServer/0/query";
@@ -526,7 +525,7 @@
         query.spatialRel = "esriSpatialRelIntersects";
         query.f = "json";
 
-        _zoneAjaxQuery = $.ajax(url, {
+        aj.ajax(url, {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -534,10 +533,10 @@
             dataType: "jsonp",
             jsonpCallback: 'fnsuccesscallback',
             data: query
-        }).done(function (featureSet) {
+        }, function (featureSet) {
             insertZoneListContent(
                 buildZoneListContent((featureSet.features) ? (featureSet.features) : (null)));
-        }).fail(function () {
+        }, function () {
             $('#loader').hide();
             $("#alert").show();
         });
@@ -1278,12 +1277,11 @@
         });
     };
 
-    var _searchParcelAjax;
     function searchParcelObject(objectType, query) {
         query.f = "json";
         query.returnGeometry = false;
 
-        _searchParcelAjax = $.ajax(objectType.layerUrl, {
+        aj.ajax(objectType.layerUrl, {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1291,17 +1289,16 @@
             dataType: "jsonp",
             jsonpCallback: 'fnsuccesscallback',
             data: query
-        }).done(function (featureSet) {
+        }, function (featureSet) {
             showInfoWindow(objectType, featureSet);
-        }).fail(function () {
+        }, function () {
             $('#loader').hide();
             $("#alert").show();
         });
     };
 
-    var _searchObjectAjax;
     function searchObject(objectType, whereClause) {
-        _searchObjectAjax = $.ajax(objectType.layerUrl + "/query", {
+        aj.ajax(objectType.layerUrl + "/query", {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1316,15 +1313,14 @@
                 geometryType: 'esriGeometryPoint',
                 spatialRel: 'esriSpatialRelIntersects'
             }
-        }).done(function (featureSet) {
+        }, function (featureSet) {
             showInfoWindow(objectType, featureSet);
-        }).fail(function () {
+        }, function () {
             $('#loader').hide();
             $("#alert").show();
         });
     };
 
-    var _identifyAjax;
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
             geometryRequest.abort();
@@ -1348,7 +1344,7 @@
 
         $("#loader").show();
 
-        _identifyAjax = $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
+        aj.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1366,7 +1362,7 @@
                 sr: '102100',
                 layers: layerId || 'top' //top or all or layerId
             }
-        }).done(function (data) {
+        }, function (data) {
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
 
                 var featureSet = data.results;
@@ -1393,7 +1389,7 @@
                 $("#loader").hide();
                 $("#alert").show();
             }
-        }).fail(function () {
+        }, function () {
             $('#loader').hide();
             $("#alert").show();
         });
@@ -1440,8 +1436,9 @@
         return cadastreNumber;
     }
 
-    var _cadastreSearchAjax;
     var cadastreSearch = function (map, value) {
+
+        aj.abort();
 
         value = value.trim();
 
@@ -1453,7 +1450,7 @@
             $("#alert").hide();
 
             if (cadType == CadastreTypes.parcel) {
-                _cadastreSearchAjax = $.ajax(cadType.layerUrl, {
+                aj.ajax(cadType.layerUrl, {
                     crossDomain: true,
                     type: "GET",
                     contentType: "application/json; charset=utf-8",
@@ -1466,7 +1463,7 @@
                         returnGeometry: 'false',
                         f: 'json'
                     }
-                }).done(function (data) {
+                }, function (data) {
                     $('#loader').hide();
 
                     if (data.features.length == 0) {
@@ -1484,7 +1481,7 @@
                     map.zoomToExtent(minX, minY, maxX, maxY);
                     createBalloonInfo(x, y, { minX: minX, minY: minY, maxX: maxX, maxY: maxY }, "");
 
-                }).fail(function () {
+                }, function () {
                     $('#loader').hide();
                     $("#alert").show();
                 });
@@ -1493,7 +1490,7 @@
 
                 var cadastreNumber = normalizeSearchCadastreNumber(value);
 
-                _cadastreSearchAjax = $.getJSON(cadType.layerUrl + '/query?' + 'where=' + encodeURIComponent(cadType.fieldId + " like '" + cadastreNumber + "%'"), {
+                $.getJSON(cadType.layerUrl + '/query?' + 'where=' + encodeURIComponent(cadType.fieldId + " like '" + cadastreNumber + "%'"), {
                     f: 'json',
                     returnGeometry: true,
                     spatialRel: "esriSpatialRelIntersects",
@@ -1660,6 +1657,7 @@
             if (cbDivision.checked) {
                 $("#loader").show();
 
+                cadastreShowExt.abortLoading();
                 cadastreShowExt.remove();
                 cadastreShowExt.initialize();
                 if (infoClickSelected)
@@ -1738,6 +1736,7 @@
 
             thematicShowExt.setVisibility(thmtChecked);
             if (thmtChecked) {
+                thematicShowExt.abortLoading();
                 thematicShowExt.remove();
                 thematicShowExt.clearImagesCache();
                 thematicShowExt.initialize();
@@ -1864,6 +1863,9 @@
     };
 
     function onCadastreLayerClick() {
+
+        aj.abort();
+
         var mousePosX = map.getMouseX();
         var mousePosY = map.getMouseY();
         var extent = map.getVisibleExtent();
@@ -1955,11 +1957,16 @@
         }
     };
 
+    var aj;
+
     var publicInterface = {
         pluginName: 'Cadastre',
 
         //см. описание параметров ниже
         afterViewer: function (params, map) {
+
+            aj = new AjaxEx();
+
             gParams = $.extend({
                 proxyUrl: '',
                 cadastreServer: 'http://maps.rosreestr.ru/arcgis/rest/services/',
@@ -2094,7 +2101,8 @@
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
         init: function (module, path) {
             return $.when(
-                gmxCore.loadScript(path + "showExt.js")
+                gmxCore.loadScript(path + "showExt.js"),
+                gmxCore.loadScript(path + "ajaxEx.js")
             );
         },
         css: "cadastre.css"
