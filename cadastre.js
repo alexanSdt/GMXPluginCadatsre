@@ -744,7 +744,7 @@
 
         //Start "Zone"
         //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneWaitListItem;
-        //searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+        searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
         //End "Zone"
 
         ////Start "Link"
@@ -959,10 +959,10 @@
     };
 
     var dx, dy, map;
-    var mapListenerInfo, mapListenerInfoRight, cadastreLayerListener, cadastreLayerSearchListener; // Listener для идентификации кадастрового участка на карте
+    var mapListenerInfo, mapListenerInfoRight, cadastreLayerSearchListener; // Listener для идентификации кадастрового участка на карте
     var balloonInfo, balloonSearch; // balloon для идентификации и поиска кадастрового участка на карте
     var geometry;// геометрия выделенного участка
-    var cadastreLayerInfo, cadastreLayerSearch, cadastreLayer, cadastreLayerRight;
+    var cadastreLayerInfo, cadastreLayerSearch;
     var cadastreServer;
     var cadastreServerThematic;
     var dialog, inputCadNum;
@@ -1278,11 +1278,12 @@
         });
     };
 
+    var _searchParcelAjax;
     function searchParcelObject(objectType, query) {
         query.f = "json";
         query.returnGeometry = false;
 
-        $.ajax(objectType.layerUrl, {
+        _searchParcelAjax = $.ajax(objectType.layerUrl, {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1298,8 +1299,9 @@
         });
     };
 
+    var _searchObjectAjax;
     function searchObject(objectType, whereClause) {
-        $.ajax(objectType.layerUrl + "/query", {
+        _searchObjectAjax = $.ajax(objectType.layerUrl + "/query", {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1322,6 +1324,7 @@
         });
     };
 
+    var _identifyAjax;
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
             geometryRequest.abort();
@@ -1345,7 +1348,7 @@
 
         $("#loader").show();
 
-        $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
+        _identifyAjax = $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
             crossDomain: true,
             type: "GET",
             contentType: "application/json; charset=utf-8",
@@ -1437,6 +1440,7 @@
         return cadastreNumber;
     }
 
+    var _cadastreSearchAjax;
     var cadastreSearch = function (map, value) {
 
         value = value.trim();
@@ -1449,7 +1453,7 @@
             $("#alert").hide();
 
             if (cadType == CadastreTypes.parcel) {
-                $.ajax(cadType.layerUrl, {
+                _cadastreSearchAjax = $.ajax(cadType.layerUrl, {
                     crossDomain: true,
                     type: "GET",
                     contentType: "application/json; charset=utf-8",
@@ -1489,7 +1493,7 @@
 
                 var cadastreNumber = normalizeSearchCadastreNumber(value);
 
-                $.getJSON(cadType.layerUrl + '/query?' + 'where=' + encodeURIComponent(cadType.fieldId + " like '" + cadastreNumber + "%'"), {
+                _cadastreSearchAjax = $.getJSON(cadType.layerUrl + '/query?' + 'where=' + encodeURIComponent(cadType.fieldId + " like '" + cadastreNumber + "%'"), {
                     f: 'json',
                     returnGeometry: true,
                     spatialRel: "esriSpatialRelIntersects",
@@ -1685,8 +1689,6 @@
                     map.removeListener("onClick", mapListenerInfo);
                 if (mapListenerInfoRight)
                     map.removeListener("onClick", mapListenerInfoRight);
-                if (cadastreLayerListener)
-                    map.removeListener("onMoveEnd", cadastreLayerListener);
                 if (balloonSearch)
                     balloonSearch.remove();
                 if (cadastreLayerSearch)
@@ -1748,7 +1750,6 @@
             cadastreShowExt.setVisibility(cbDivision.checked);
         }
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
-        var thmtLayer, thmtLayerRight;
         var div = _div(null, [['dir', 'className', 'cadastreLeftMenuContainer']]);
         var trs = [];
 
@@ -1806,19 +1807,6 @@
         trs.push(_tr([_td([rbMapVisitors]), _td([_label([_t("Общее количество посещений")], [['attr', 'for', 'rbMapVisitors'], ['dir', 'className', 'cadastreLeftMenuLabel']])])], [['dir', 'className', 'cadastreLeftMenuRow']]));
 
         this.mapObject = gmxAPI.map.addObject();
-        thmtLayer = this.mapObject.addObject(null, { type: 'Overlay' });
-        thmtLayerRight = this.mapObject.addObject(null, { type: 'Overlay' });
-        cadastreLayer = this.mapObject.addObject();
-        //cadastreLayerRight = this.mapObject.addObject();
-
-        thmtLayer.addListener('onImageLoad', function (e) {
-            $("#loader").hide();
-            $("#alert").hide();
-        });
-        thmtLayer.addListener('onImageError', function (e) {
-            $("#loader").hide();
-            $("#alert").show();
-        });
 
         var iListenerID = -1;
 
@@ -1842,12 +1830,7 @@
             $("#loader").hide();
             gmxAPI._tools.standart.removeTool('cadastreInfo');
             gmxAPI._tools.standart.removeTool('cadastreDx');
-            if (mapListenerInfo)
-                cadastreLayer.removeListener('onClick', mapListenerInfo);
-            if (mapListenerInfoRight)
-                cadastreLayerRight.removeListener('onClick', mapListenerInfoRight);
-            if (cadastreLayerListener)
-                map.removeListener("onMoveEnd", cadastreLayerListener);
+
             if (iListenerID)
                 map.removeListener("onMoveEnd", iListenerID);
             if (cadastreLayerInfo)
@@ -1857,11 +1840,6 @@
             infoClickSelected = false;
 
             thematicShowExt.remove();
-
-            //if (thmtLayer)
-            //    thmtLayer.remove();
-            //if (thmtLayerRight)
-            //    thmtLayerRight.remove();
 
             if (balloonInfo) {
                 balloonInfo.remove();
@@ -1936,13 +1914,9 @@
                     sx = gmxAPI.merc_x(x);
                     sy = gmxAPI.merc_y(y);
                 };
-                cadastreLayer.enableDragging(drag, dragStart, dragEnd);
+                //TODO: сюда калибровка для кадастроых картинок
             },
             'onCancel': function () {
-                if (cadastreLayer)
-                    cadastreLayer.disableDragging();
-                if (cadastreLayerRight)
-                    cadastreLayerRight.disableDragging();
                 gmxAPI._tools.standart.selectTool("move");
             },
             'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
@@ -1965,8 +1939,6 @@
 
                 cadastreShowExt.removeListener("onclick");
 
-                if (cadastreLayerListener)
-                    map.removeListener("onMoveEnd", cadastreLayerListener);
                 if (cadastreLayerInfo)
                     cadastreLayerInfo.remove();
                 if (balloonInfo) {
