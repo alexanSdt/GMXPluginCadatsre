@@ -146,6 +146,10 @@ ShowExt.prototype.abortLoading = function () {
     imgs.length = 0;
 };
 
+ShowExt.equal = function (a, b) {
+    return a.minX == b.minX && a.minY == b.minY && a.maxX == b.maxX && a.maxY == b.maxY;
+};
+
 ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, index, callback) {
     var addr = ShowExt.getCacheString(imageExtent);
 
@@ -163,10 +167,14 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             that.imagesExtentCache[addr].imageObject = this;
             that.imagesExtentCache[addr].status = ShowExt.READY;
 
-            that.imageLayers[index].setImageExtent({
-                "image": this,
-                "extent": imageExtent.globalExtent
-            });
+            //Дополнительная проверка на то - что экстенты на экране не изменились.            
+            var currExt = ShowExt.getImagesExtents();
+            if (ShowExt.equal(currExt[index].globalExtent, imageExtent.globalExtent)) {
+                that.imageLayers[index].setImageExtent({
+                    "image": this,
+                    "extent": imageExtent.globalExtent
+                });
+            }
 
             if (that._queryCounter == 0) {
                 that._images.length = 0;
