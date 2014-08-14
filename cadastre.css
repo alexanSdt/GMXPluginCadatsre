@@ -24,6 +24,7 @@ div[title='Кадастр']{
     overflow-y: auto;
 }
 
+
 .mapInfoContainer{
     width: 400px;
     max-height: 170px;
@@ -50,7 +51,12 @@ div[title='Кадастр']{
     font-size: 12px;
     padding-bottom: 2px;
     padding-right: 7px;
-    width: 50%;
+    width: 50% !important;
+}
+
+.leftColumnExt{
+    width: 210px;
+    font-size: 12px;
 }
 
 .leftColumn {

@@ -212,7 +212,7 @@
         infoCategory: "<tr><td class='leftColumn'>Категория:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
 
         infoDateRow: "<tr><td class='leftColumn'>Дата постановки на учет:</td><td><strong>{0}</strong></td></tr><tr class='emptyRow'></tr><tr class='emptyRow'></tr>",
-        infoAttrActualDateRow: "<tr><td class='leftColumn'>Дата обновления атрибутов на ПКК:</td><td><strong id='actual_date'>{0}</strong></td></tr></tr>",
+        infoAttrActualDateRow: "<tr><td class='leftColumn'><div class='leftColumnExt'>Дата обновления атрибутов на ПКК:</div></td><td><strong id='actual_date'>{0}</strong></td></tr></tr>",
         infoBorderActualDateRow: "<tr><td class='leftColumn'>Дата обновления границ на ПКК:</td><td><strong id='border_actual_date'>{0}</strong></td></tr></tr>",
 
         infoParcelAttrActualDateRow: "<tr><td class='leftColumn'>Дата обновления атрибутов участка на ПКК:</td><td><strong id='actual_date'>{0}</strong></td></tr></tr>",
