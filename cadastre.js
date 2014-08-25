@@ -1904,15 +1904,15 @@
             'activeImageUrl': gmxCore.getModulePath("cadastre") + "arrow_active.png",
             'onClick': function () {
                 var xOut, yOut, ex, ey, sx, sy;
-                var $str = $('<div id="coord">dx: ' + dx + ';<br /> dy: ' + dy + ';</div>');
+                var $str = $('<div id="coord">dx: ' + cadastreShowExt.dx + ';<br /> dy: ' + cadastreShowExt.dy + ';</div>');
                 if (!dialog)
                     dialog = showDialog("Координаты калибровки", $str.get(0), 200, 65, false, false, null, function () {
                         dialog = null;
                     });
                 // Вызывается при mouseMove при нажатой мышке
                 var drag = function (x, y, o) {
-                    xOut = (sx - gmxAPI.merc_x(x) - dx) * (-1);
-                    yOut = (sy - gmxAPI.merc_y(y) - dy) * (-1);
+                    xOut = (sx - gmxAPI.merc_x(x) - cadastreShowExt.dx) * (-1);
+                    yOut = (sy - gmxAPI.merc_y(y) - cadastreShowExt.dy) * (-1);
                     $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
                 };
 
@@ -1920,8 +1920,8 @@
                 var dragEnd = function (x, y, o) {
                     ex = gmxAPI.merc_x(x);
                     ey = gmxAPI.merc_y(y);
-                    dx = xOut;
-                    dy = yOut;
+                    cadastreShowExt.dx = xOut;
+                    cadastreShowExt.dy = yOut;
                 };
 
                 // Вызывается при mouseDown
