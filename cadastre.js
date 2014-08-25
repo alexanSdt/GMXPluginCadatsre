@@ -1268,7 +1268,7 @@
                 "geometry": geometry
             }]);
             sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
-                name: fileName,
+                name: fileName + (!(cadastreShowExt.dx || cadastreShowExt.dy) ? "" : "_смещ"),
                 format: "Shape",
                 points: '',
                 lines: '',
