@@ -1335,9 +1335,12 @@
             cadastreLayerInfo.setVisible(false);
 
         balloonInfo = gmxAPI.map.addBalloon();
-        var mousePosX = x;
-        var mousePosY = y;
-        balloonInfo.setPoint(mousePosX, mousePosY);
+
+        var mousePosX = cadastreShowExt.ndxLon(x);
+        var mousePosY = cadastreShowExt.ndyLat(y);
+        var dExtent = cadastreShowExt.ndxdyExtent(extent);
+
+        balloonInfo.setPoint(x, y);
         balloonInfo.setVisible(false);
         var geoX = merc_x(clamp_lon(mousePosX));
         var geoY = merc_y(clamp_lat(mousePosY));
@@ -1356,7 +1359,7 @@
                 geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":102100}}',
                 tolerance: '0',
                 returnGeometry: 'true',
-                mapExtent: '{"xmin":' + (merc_x(extent.minX) - parseFloat(dx).toFixed(2)) + ',"ymin":' + (merc_y(extent.minY) - parseFloat(dy).toFixed(2)) + ',"xmax":' + (merc_x(extent.maxX) - parseFloat(dx).toFixed(2)) + ',"ymax":' + (merc_y(extent.maxY) - parseFloat(dy).toFixed(2)) + ',"spatialReference":{"wkid":102100}}',
+                mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
                 imageDisplay: map.width() + ',' + getHeight() + ',96',
                 geometryType: 'esriGeometryPoint',
                 sr: '102100',
@@ -1471,12 +1474,12 @@
                         return;
                     }
 
-                    var x = converting(data.features[0].attributes.XC, "x"),
-                        y = converting(data.features[0].attributes.YC, "y"),
-                        maxX = converting(data.features[0].attributes.XMAX, "x"),
-                        minX = converting(data.features[0].attributes.XMIN, "x"),
-                        maxY = converting(data.features[0].attributes.YMAX, "y"),
-                        minY = converting(data.features[0].attributes.YMIN, "y");
+                    var x = cadastreShowExt.dxLon(converting(data.features[0].attributes.XC, "x")),
+                        y = cadastreShowExt.dyLat(converting(data.features[0].attributes.YC, "y")),
+                        maxX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x")),
+                        minX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x")),
+                        maxY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y")),
+                        minY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"));
 
                     map.zoomToExtent(minX, minY, maxX, maxY);
                     createBalloonInfo(x, y, { minX: minX, minY: minY, maxX: maxX, maxY: maxY }, "");
@@ -1514,12 +1517,12 @@
 
                     var findInfo = data.features[0].attributes;
 
-                    var x = converting(data.features[0].attributes.XC, "x"),
-                        y = converting(data.features[0].attributes.YC, "y"),
-                        maxX = converting(data.features[0].attributes.XMAX, "x"),
-                        minX = converting(data.features[0].attributes.XMIN, "x"),
-                        maxY = converting(data.features[0].attributes.YMAX, "y"),
-                        minY = converting(data.features[0].attributes.YMIN, "y");
+                    var x = cadastreShowExt.dxLon(converting(data.features[0].attributes.XC, "x")),
+                        y = cadastreShowExt.dyLat(converting(data.features[0].attributes.YC, "y")),
+                        maxX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x")),
+                        minX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x")),
+                        maxY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y")),
+                        minY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"));
 
                     if (minX < 0) {
                         minX += 360;
@@ -1598,6 +1601,9 @@
                     var c = p[j];
                     for (var k = 0; k < c.length; k++) {
 
+                        c[k][0] = cadastreShowExt.dxLon(c[k][0]);
+                        c[k][1] = cadastreShowExt.dyLat(c[k][1]);
+
                         var x;
                         if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
                             x = world.max;
@@ -1609,7 +1615,6 @@
                         } else
                             c[k][0] += x - 180;
                     }
-
                 }
             }
 
@@ -1617,6 +1622,9 @@
             for (var i = 0; i < coords.length; i++) {
                 var c = coords[i];
                 for (var j = 0; j < c.length; j++) {
+
+                    c[j][0] = cadastreShowExt.dxLon(c[j][0]);
+                    c[j][1] = cadastreShowExt.dyLat(c[j][1]);
 
                     var x;
                     if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
@@ -1901,28 +1909,41 @@
                     dialog = showDialog("Координаты калибровки", $str.get(0), 200, 65, false, false, null, function () {
                         dialog = null;
                     });
-                var drag = function (x, y, o) {              // Вызывается при mouseMove при нажатой мышке
+                // Вызывается при mouseMove при нажатой мышке
+                var drag = function (x, y, o) {
                     xOut = (sx - gmxAPI.merc_x(x) - dx) * (-1);
                     yOut = (sy - gmxAPI.merc_y(y) - dy) * (-1);
                     $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
                 };
-                var dragEnd = function (x, y, o) {    // Вызывается при mouseUp
+
+                // Вызывается при mouseUp
+                var dragEnd = function (x, y, o) {
                     ex = gmxAPI.merc_x(x);
                     ey = gmxAPI.merc_y(y);
                     dx = xOut;
                     dy = yOut;
                 };
-                var dragStart = function (x, y, o) {      // Вызывается при mouseDown
+
+                // Вызывается при mouseDown
+                var dragStart = function (x, y, o) {
                     sx = gmxAPI.merc_x(x);
                     sy = gmxAPI.merc_y(y);
                 };
-                //TODO: сюда калибровка для кадастроых картинок
+
+                var ext = ShowExt.getImagesExtents();
+                for (var i = 0; i < ext.length; i++) {
+                    cadastreShowExt.imageLayers[i].enableDragging(drag, dragStart, dragEnd);
+                }
             },
             'onCancel': function () {
+                for (var i = 0; i < cadastreShowExt.imageLayers.length; i++) {
+                    cadastreShowExt.imageLayers[i].disableDragging();
+                }
                 gmxAPI._tools.standart.selectTool("move");
             },
             'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
         };
+
         var cadastreTool = {
             'key': "cadastreInfo",
             'activeStyle': {},

@@ -5,6 +5,10 @@ var ShowExt = function () {
     this._listeners = {};
     this._visible = false;
     this._images = [];
+
+    //Сдесь хранится смещение экстента(в меркаторе)
+    this.dx = 0;
+    this.dy = 0;
 };
 
 ShowExt.READY = 100;
@@ -43,6 +47,40 @@ ShowExt.prototype.initialize = function () {
         if (!this.imageLayers[i])
             this.imageLayers[i] = gmxAPI.map.addObject();
     }
+};
+
+ShowExt.prototype.dxLon = function (lon) {
+    return gmxAPI.from_merc_x(gmxAPI.merc_x(lon) + this.dx);
+};
+
+ShowExt.prototype.dyLat = function (lat) {
+    return gmxAPI.from_merc_y(gmxAPI.merc_y(lat) + this.dy);
+};
+
+ShowExt.prototype.ndxLon = function (lon) {
+    return gmxAPI.from_merc_x(gmxAPI.merc_x(lon) - this.dx);
+};
+
+ShowExt.prototype.ndyLat = function (lat) {
+    return gmxAPI.from_merc_y(gmxAPI.merc_y(lat) - this.dy);
+};
+
+ShowExt.prototype.ndxdyExtent = function (extent) {
+    return {
+        minX: this.ndxLon(extent.minX),
+        minY: this.ndyLat(extent.minY),
+        maxX: this.ndxLon(extent.maxX),
+        maxY: this.ndyLat(extent.maxY)
+    };
+};
+
+ShowExt.prototype.dxdyExtent = function (extent) {
+    return {
+        minX: this.dxLon(extent.minX),
+        minY: this.dyLat(extent.minY),
+        maxX: this.dxLon(extent.maxX),
+        maxY: this.dyLat(extent.maxY)
+    };
 };
 
 ShowExt.prototype.clearImagesCache = function () {
@@ -157,7 +195,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
 
         this.imageLayers[index].setImageExtent({
             "image": this.imagesExtentCache[addr].imageObject,
-            "extent": imageExtent.globalExtent
+            "extent": this.dxdyExtent(this.imageExtent.globalExtent)
         });
 
     } else {
@@ -172,7 +210,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             if (ShowExt.equal(currExt[index].globalExtent, imageExtent.globalExtent)) {
                 that.imageLayers[index].setImageExtent({
                     "image": this,
-                    "extent": imageExtent.globalExtent
+                    "extent": that.dxdyExtent(imageExtent.globalExtent)
                 });
             }
 
@@ -296,9 +334,9 @@ ShowExt.getWorldsOnTheScreen = function () {
     return res;
 };
 
-ShowExt.coordsToWorld = function (lonlat, worldIndex) {
-    return [ShowExt._worlds[worldIndex].center + lonlat.lon, lonlat[1]];
-};
+//ShowExt.coordsToWorld = function (lonlat, worldIndex) {
+//    return [ShowExt._worlds[worldIndex].center + lonlat.lon, lonlat[1]];
+//};
 
 //Нормализует долготу к периоду -pi до pi
 ShowExt.norm_lon = function (deg, worldMin) {
