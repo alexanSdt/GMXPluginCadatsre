@@ -9,6 +9,7 @@ var ShowExt = function () {
     //Сдесь хранится смещение экстента(в меркаторе)
     this.dx = 0;
     this.dy = 0;
+    this.dragging = false;
 };
 
 ShowExt.READY = 100;
@@ -40,6 +41,59 @@ ShowExt._worlds = ShowExt.buildWorlds(ShowExt.worldsCount);
 
 ShowExt.NORTH_LIMIT = 83.0;//gmxAPI.from_merc_y(gmxAPI.merc_x(180.0));
 ShowExt.SOUTH_LIMIT = -ShowExt.NORTH_LIMIT;
+
+ShowExt.prototype.enableDragging = function (callback) {
+    var xOut, yOut, ex, ey, sx, sy;
+    var ext = ShowExt.getImagesExtents();
+
+    // Вызывается при mouseMove при нажатой мышке
+    var drag = function (x, y, o) {
+
+        xOut = (sx - gmxAPI.merc_x(x) - cadastreShowExt.dx) * (-1);
+        yOut = (sy - gmxAPI.merc_y(y) - cadastreShowExt.dy) * (-1);
+
+        for (var i = 0; i < ext.length; i++) {
+            var it = ext[i].globalExtent,
+                obj = cadastreShowExt.imageLayers[i],
+                lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
+            lObj.setLatLng(new L.LatLng(gmxAPI.from_merc_y(gmxAPI.merc_y(it.maxY) + yOut), gmxAPI.from_merc_x(gmxAPI.merc_x(it.minX) + xOut)));
+
+        }
+
+        if (callback)
+            callback(xOut, yOut);
+    };
+
+    // Вызывается при mouseUp
+    var dragEnd = function (x, y, o) {
+        ex = gmxAPI.merc_x(x);
+        ey = gmxAPI.merc_y(y);
+        cadastreShowExt.dx = xOut;
+        cadastreShowExt.dy = yOut;
+    };
+
+    // Вызывается при mouseDown
+    var dragStart = function (x, y, o) {
+        sx = gmxAPI.merc_x(x);
+        sy = gmxAPI.merc_y(y);
+    };
+
+    var ext = ShowExt.getImagesExtents();
+    for (var i = 0; i < ext.length; i++) {
+        this.imageLayers[i].enableDragging(drag, dragStart, dragEnd);
+    }
+
+    this.dragging = true;
+};
+
+ShowExt.prototype.disableDragging = function () {
+    if (this.dragging) {
+        for (var i = 0; i < this.imageLayers.length; i++) {
+            this.imageLayers[i].disableDragging();
+        }
+        this.dragging = false;
+    }
+};
 
 ShowExt.prototype.initialize = function () {
     this._queryCounter = 0;

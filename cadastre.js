@@ -1665,6 +1665,9 @@
             if (cbDivision.checked) {
                 $("#loader").show();
 
+                var dragging = cadastreShowExt.dragging;
+
+                cadastreShowExt.disableDragging()
                 cadastreShowExt.abortLoading();
                 cadastreShowExt.remove();
                 cadastreShowExt.initialize();
@@ -1755,7 +1758,11 @@
 
             cadastreShowExt.setDepth(1000);
             cadastreShowExt.setVisibility(cbDivision.checked);
-        }
+
+            if (dragging)
+                cadastreShowExt.enableDragging();
+        };
+
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
         var div = _div(null, [['dir', 'className', 'cadastreLeftMenuContainer']]);
         var trs = [];
@@ -1903,42 +1910,17 @@
             'regularImageUrl': gmxCore.getModulePath("cadastre") + "arrow.png",
             'activeImageUrl': gmxCore.getModulePath("cadastre") + "arrow_active.png",
             'onClick': function () {
-                var xOut, yOut, ex, ey, sx, sy;
                 var $str = $('<div id="coord">dx: ' + cadastreShowExt.dx + ';<br /> dy: ' + cadastreShowExt.dy + ';</div>');
                 if (!dialog)
                     dialog = showDialog("Координаты калибровки", $str.get(0), 200, 65, false, false, null, function () {
                         dialog = null;
                     });
-                // Вызывается при mouseMove при нажатой мышке
-                var drag = function (x, y, o) {
-                    xOut = (sx - gmxAPI.merc_x(x) - cadastreShowExt.dx) * (-1);
-                    yOut = (sy - gmxAPI.merc_y(y) - cadastreShowExt.dy) * (-1);
+                cadastreShowExt.enableDragging(function (xOut, yOut) {
                     $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
-                };
-
-                // Вызывается при mouseUp
-                var dragEnd = function (x, y, o) {
-                    ex = gmxAPI.merc_x(x);
-                    ey = gmxAPI.merc_y(y);
-                    cadastreShowExt.dx = xOut;
-                    cadastreShowExt.dy = yOut;
-                };
-
-                // Вызывается при mouseDown
-                var dragStart = function (x, y, o) {
-                    sx = gmxAPI.merc_x(x);
-                    sy = gmxAPI.merc_y(y);
-                };
-
-                var ext = ShowExt.getImagesExtents();
-                for (var i = 0; i < ext.length; i++) {
-                    cadastreShowExt.imageLayers[i].enableDragging(drag, dragStart, dragEnd);
-                }
+                });
             },
             'onCancel': function () {
-                for (var i = 0; i < cadastreShowExt.imageLayers.length; i++) {
-                    cadastreShowExt.imageLayers[i].disableDragging();
-                }
+                cadastreShowExt.disableDragging();
                 gmxAPI._tools.standart.selectTool("move");
             },
             'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
