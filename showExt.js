@@ -1,4 +1,4 @@
-var ShowExt = function () {
+var ShowExt = function (dx, dy) {
     this.imageLayers = [];
     this.imagesExtentCache = {};
     this._queryCounter = 0;
@@ -7,8 +7,8 @@ var ShowExt = function () {
     this._images = [];
 
     //Сдесь хранится смещение экстента(в меркаторе)
-    this.dx = 0;
-    this.dy = 0;
+    this.dx = dx || 0;
+    this.dy = dy || 0;
     this.dragging = false;
 };
 
@@ -42,23 +42,25 @@ ShowExt._worlds = ShowExt.buildWorlds(ShowExt.worldsCount);
 ShowExt.NORTH_LIMIT = 83.0;//gmxAPI.from_merc_y(gmxAPI.merc_x(180.0));
 ShowExt.SOUTH_LIMIT = -ShowExt.NORTH_LIMIT;
 
+
 ShowExt.prototype.enableDragging = function (callback) {
     var xOut, yOut, ex, ey, sx, sy;
-    var ext = ShowExt.getImagesExtents();
+    var ext = ShowExt.getImagesExtents(this.dx, this.dy);
+
+    var that = this;
 
     // Вызывается при mouseMove при нажатой мышке
     var drag = function (x, y, o) {
 
-        xOut = (sx - gmxAPI.merc_x(x) - cadastreShowExt.dx) * (-1);
-        yOut = (sy - gmxAPI.merc_y(y) - cadastreShowExt.dy) * (-1);
+        xOut = (sx - gmxAPI.merc_x(x) - that.dx) * (-1);
+        yOut = (sy - gmxAPI.merc_y(y) - that.dy) * (-1);
 
-        for (var i = 0; i < ext.length; i++) {
-            var it = ext[i].globalExtent,
-                obj = cadastreShowExt.imageLayers[i],
-                lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
-            lObj.setLatLng(new L.LatLng(gmxAPI.from_merc_y(gmxAPI.merc_y(it.maxY) + yOut), gmxAPI.from_merc_x(gmxAPI.merc_x(it.minX) + xOut)));
-
-        }
+        //for (var i = 0; i < ext.length; i++) {
+        //    var it = ext[i].globalExtent,
+        //        obj = that.imageLayers[i],
+        //        lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
+        //    lObj.setLatLng(new L.LatLng(ShowExt.dyLat(it.maxY, yOut), ShowExt.dxLon(it.minX, xOut)));
+        //}
 
         if (callback)
             callback(xOut, yOut);
@@ -68,8 +70,9 @@ ShowExt.prototype.enableDragging = function (callback) {
     var dragEnd = function (x, y, o) {
         ex = gmxAPI.merc_x(x);
         ey = gmxAPI.merc_y(y);
-        cadastreShowExt.dx = xOut;
-        cadastreShowExt.dy = yOut;
+
+        that.dx = xOut;
+        that.dy = yOut;
     };
 
     // Вызывается при mouseDown
@@ -78,7 +81,6 @@ ShowExt.prototype.enableDragging = function (callback) {
         sy = gmxAPI.merc_y(y);
     };
 
-    var ext = ShowExt.getImagesExtents();
     for (var i = 0; i < ext.length; i++) {
         this.imageLayers[i].enableDragging(drag, dragStart, dragEnd);
     }
@@ -103,37 +105,20 @@ ShowExt.prototype.initialize = function () {
     }
 };
 
-ShowExt.prototype.dxLon = function (lon) {
-    return gmxAPI.from_merc_x(gmxAPI.merc_x(lon) + this.dx);
+ShowExt.dxLon = function (lon, dx) {
+    return gmxAPI.from_merc_x(gmxAPI.merc_x(lon) + dx);
 };
 
-ShowExt.prototype.dyLat = function (lat) {
-    return gmxAPI.from_merc_y(gmxAPI.merc_y(lat) + this.dy);
+ShowExt.dyLat = function (lat, dy) {
+    return gmxAPI.from_merc_y(gmxAPI.merc_y(lat) + dy);
 };
 
-ShowExt.prototype.ndxLon = function (lon) {
-    return gmxAPI.from_merc_x(gmxAPI.merc_x(lon) - this.dx);
-};
-
-ShowExt.prototype.ndyLat = function (lat) {
-    return gmxAPI.from_merc_y(gmxAPI.merc_y(lat) - this.dy);
-};
-
-ShowExt.prototype.ndxdyExtent = function (extent) {
+ShowExt.dxdyExtent = function (extent, dx, dy) {
     return {
-        minX: this.ndxLon(extent.minX),
-        minY: this.ndyLat(extent.minY),
-        maxX: this.ndxLon(extent.maxX),
-        maxY: this.ndyLat(extent.maxY)
-    };
-};
-
-ShowExt.prototype.dxdyExtent = function (extent) {
-    return {
-        minX: this.dxLon(extent.minX),
-        minY: this.dyLat(extent.minY),
-        maxX: this.dxLon(extent.maxX),
-        maxY: this.dyLat(extent.maxY)
+        minX: ShowExt.dxLon(extent.minX, dx),
+        minY: ShowExt.dyLat(extent.minY, dy),
+        maxX: ShowExt.dxLon(extent.maxX, dx),
+        maxY: ShowExt.dyLat(extent.maxY, dy)
     };
 };
 
@@ -220,7 +205,7 @@ ShowExt.getUrlCadastre = function (urlTemplate, imageExtent) {
 //загружает и показывает экстенты всех миров отображаемых на экране
 ShowExt.prototype.showScreenExtent = function (urlTemplate, callback) {
 
-    var extents = ShowExt.getImagesExtents();
+    var extents = ShowExt.getImagesExtents(this.dx, this.dy);
 
     for (var i = 0; i < extents.length; i++) {
         var img = new Image();
@@ -249,7 +234,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
 
         this.imageLayers[index].setImageExtent({
             "image": this.imagesExtentCache[addr].imageObject,
-            "extent": this.dxdyExtent(this.imageExtent.globalExtent)
+            "extent": this.imageExtent.globalExtent
         });
 
     } else {
@@ -260,11 +245,11 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             that.imagesExtentCache[addr].status = ShowExt.READY;
 
             //Дополнительная проверка на то - что экстенты на экране не изменились.            
-            var currExt = ShowExt.getImagesExtents();
+            var currExt = ShowExt.getImagesExtents(that.dx, that.dy);
             if (ShowExt.equal(currExt[index].globalExtent, imageExtent.globalExtent)) {
                 that.imageLayers[index].setImageExtent({
                     "image": this,
-                    "extent": that.dxdyExtent(imageExtent.globalExtent)
+                    "extent": imageExtent.globalExtent
                 });
             }
 
@@ -319,7 +304,25 @@ ShowExt.getImageWidth = function (lon_min, lon_max) {
 };
 
 
-ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world) {
+//ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world) {
+//    var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
+//        norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
+//    return {
+//        "imageSize": {
+//            "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+//            "height": ShowExt.getImageHeight(lat_min, lat_max)
+//        },
+//        "globalExtent": {
+//            "minX": lon_min, "minY": lat_min, "maxX": lon_max, "maxY": lat_max
+//        },
+//        "normalExtent": {
+//            "minX": norm_lon_min, "minY": lat_min, "maxX": norm_lon_max, "maxY": lat_max
+//        }
+//    };
+//};
+
+
+ShowExt.createImageExtentSolo = function (lon_min, lat_min, lon_max, lat_max, world, dx, dy) {
     var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
         norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
     return {
@@ -331,14 +334,17 @@ ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world)
             "minX": lon_min, "minY": lat_min, "maxX": lon_max, "maxY": lat_max
         },
         "normalExtent": {
-            "minX": norm_lon_min, "minY": lat_min, "maxX": norm_lon_max, "maxY": lat_max
+            "minX": ShowExt.dxLon(norm_lon_min, -dx),
+            "minY": ShowExt.dyLat(lat_min, -dy),
+            "maxX": ShowExt.dxLon(norm_lon_max, -dx),
+            "maxY": ShowExt.dyLat(lat_max, -dy)
         }
     };
 };
 
 //возвращает границы и соотвтетсвующие размеры изображений, которые сейчас видны на экране
 //P.S. это как-бы расширенная версия функции ShowExt.getWorldsOnTheScreen()
-ShowExt.getImagesExtents = function () {
+ShowExt.getImagesExtents = function (dx, dy) {
     var ext = gmxAPI._leaflet.LMap.getBounds();
     var north_lim = ext._northEast.lat > ShowExt.NORTH_LIMIT ? ShowExt.NORTH_LIMIT : ext._northEast.lat,
         south_lim = ext._southWest.lat < ShowExt.SOUTH_LIMIT ? ShowExt.SOUTH_LIMIT : ext._southWest.lat;
@@ -347,7 +353,7 @@ ShowExt.getImagesExtents = function () {
     var res = [];
 
     if (screenWorlds.length == 1) {
-        res.push(ShowExt.createImageExtent(ext._southWest.lng, south_lim, ext._northEast.lng, north_lim, screenWorlds[0]));
+        res.push(ShowExt.createImageExtentSolo(ext._southWest.lng, south_lim, ext._northEast.lng, north_lim, screenWorlds[0], dx, dy));
     } else {
         for (var i = 0; i < screenWorlds.length; i++) {
             var swi = screenWorlds[i];
@@ -364,12 +370,64 @@ ShowExt.getImagesExtents = function () {
                 lon_max = swi.max;
             }
 
-            res.push(ShowExt.createImageExtent(lon_min, south_lim, lon_max, north_lim, swi));
+            res.push(ShowExt.createImageExtent(lon_min, south_lim, lon_max, north_lim, swi, dx, dy));
         }
     }
 
     return res;
 };
+
+ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world, dx, dy) {
+
+    if (lon_max == world.max &&
+        lon_min == world.min) {
+        //весь экстент
+
+    } else if (lon_max == world.max) {
+        //левый экстент
+
+        var norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
+            norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
+
+        return {
+            "imageSize": {
+                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+                "height": ShowExt.getImageHeight(lat_min, lat_max)
+            },
+            "globalExtent": {
+                "minX": lon_min, "minY": lat_min, "maxX": ShowExt.dxLon(lon_max, dx), "maxY": lat_max
+            },
+            "normalExtent": {
+                "minX": norm_lon_min,
+                "minY": ShowExt.dyLat(lat_min, -dy),
+                "maxX": norm_lon_max,
+                "maxY": ShowExt.dyLat(lat_max, -dy)
+            }
+        };
+
+    } else if (lon_min == world.min) {
+        //правый экстент
+        var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
+            norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
+
+        return {
+            "imageSize": {
+                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+                "height": ShowExt.getImageHeight(lat_min, lat_max)
+            },
+            "globalExtent": {
+                "minX": ShowExt.dxLon(lon_min, dx), "minY": lat_min, "maxX": lon_max, "maxY": lat_max
+            },
+            "normalExtent": {
+                "minX": norm_lon_min,
+                "minY": ShowExt.dyLat(lat_min, -dy),
+                "maxX": norm_lon_max,
+                "maxY": ShowExt.dyLat(lat_max, -dy)
+            }
+        };
+    }
+};
+
 
 //возвращает миры, которые в данный момент видны на экране
 ShowExt.getWorldsOnTheScreen = function () {

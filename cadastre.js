@@ -1336,9 +1336,9 @@
 
         balloonInfo = gmxAPI.map.addBalloon();
 
-        var mousePosX = cadastreShowExt.ndxLon(x);
-        var mousePosY = cadastreShowExt.ndyLat(y);
-        var dExtent = cadastreShowExt.ndxdyExtent(extent);
+        var mousePosX = ShowExt.dxLon(x, -cadastreShowExt.dx);
+        var mousePosY = ShowExt.dyLat(y, -cadastreShowExt.dy);
+        var dExtent = ShowExt.dxdyExtent(extent, -cadastreShowExt.dx, -cadastreShowExt.dy);
 
         balloonInfo.setPoint(x, y);
         balloonInfo.setVisible(false);
@@ -1474,12 +1474,12 @@
                         return;
                     }
 
-                    var x = cadastreShowExt.dxLon(converting(data.features[0].attributes.XC, "x")),
-                        y = cadastreShowExt.dyLat(converting(data.features[0].attributes.YC, "y")),
-                        maxX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x")),
-                        minX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x")),
-                        maxY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y")),
-                        minY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"));
+                    var x = ShowExt.dxLon(converting(data.features[0].attributes.XC, "x"), cadastreShowExt.dx),
+                        y = ShowExt.dyLat(converting(data.features[0].attributes.YC, "y"), cadastreShowExt.dy),
+                        maxX = ShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x"), cadastreShowExt.dx),
+                        minX = ShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x"), cadastreShowExt.dx),
+                        maxY = ShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y"), cadastreShowExt.dy),
+                        minY = ShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"), cadastreShowExt.dy);
 
                     map.zoomToExtent(minX, minY, maxX, maxY);
                     createBalloonInfo(x, y, { minX: minX, minY: minY, maxX: maxX, maxY: maxY }, "");
@@ -1517,12 +1517,12 @@
 
                     var findInfo = data.features[0].attributes;
 
-                    var x = cadastreShowExt.dxLon(converting(data.features[0].attributes.XC, "x")),
-                        y = cadastreShowExt.dyLat(converting(data.features[0].attributes.YC, "y")),
-                        maxX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x")),
-                        minX = cadastreShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x")),
-                        maxY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y")),
-                        minY = cadastreShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"));
+                    var x = ShowExt.dxLon(converting(data.features[0].attributes.XC, "x"), cadastreShowExt.dx),
+                        y = ShowExt.dyLat(converting(data.features[0].attributes.YC, "y"), cadastreShowExt.dy),
+                        maxX = ShowExt.dxLon(converting(data.features[0].attributes.XMAX, "x"), cadastreShowExt.dx),
+                        minX = ShowExt.dxLon(converting(data.features[0].attributes.XMIN, "x"), cadastreShowExt.dx),
+                        maxY = ShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y"), cadastreShowExt.dy),
+                        minY = ShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"), cadastreShowExt.dy);
 
                     if (minX < 0) {
                         minX += 360;
@@ -1601,8 +1601,8 @@
                     var c = p[j];
                     for (var k = 0; k < c.length; k++) {
 
-                        c[k][0] = cadastreShowExt.dxLon(c[k][0]);
-                        c[k][1] = cadastreShowExt.dyLat(c[k][1]);
+                        c[k][0] = ShowExt.dxLon(c[k][0], cadastreShowExt.dx);
+                        c[k][1] = ShowExt.dyLat(c[k][1], cadastreShowExt.dy);
 
                         var x;
                         if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
@@ -1623,8 +1623,8 @@
                 var c = coords[i];
                 for (var j = 0; j < c.length; j++) {
 
-                    c[j][0] = cadastreShowExt.dxLon(c[j][0]);
-                    c[j][1] = cadastreShowExt.dyLat(c[j][1]);
+                    c[j][0] = ShowExt.dxLon(c[j][0], cadastreShowExt.dx);
+                    c[j][1] = ShowExt.dyLat(c[j][1], cadastreShowExt.dy);
 
                     var x;
                     if (Math.abs(centerX - world.min) > Math.abs(world.max - centerX))
@@ -1760,7 +1760,9 @@
             cadastreShowExt.setVisibility(cbDivision.checked);
 
             if (dragging)
-                cadastreShowExt.enableDragging();
+                cadastreShowExt.enableDragging(function (xOut, yOut) {
+                    $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
+                });
         };
 
         var cbDivision, rbNo, rbCostLayer, rbCostByAreaLayer, rbUseType, rbCategory, rbMapUpdate, rbMapVisitors;
