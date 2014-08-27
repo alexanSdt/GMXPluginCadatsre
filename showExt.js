@@ -49,6 +49,9 @@ ShowExt.prototype.enableDragging = function (callback) {
 
     var that = this;
 
+    sdx = this.dx;
+    sdy = this.dy;
+
     // Вызывается при mouseMove при нажатой мышке
     var drag = function (x, y, o) {
 
@@ -57,8 +60,9 @@ ShowExt.prototype.enableDragging = function (callback) {
 
         for (var i = 0; i < ext.length; i++) {
             var itx = ShowExt.dxLon(ext[i].globalExtent.minX, -sdx),
-                ity = ShowExt.dyLat(ext[i].globalExtent.maxY, -sdy),
-                obj = that.imageLayers[i],
+                ity = ShowExt.dyLat(ext[i].globalExtent.maxY, -sdy);
+
+            var obj = that.imageLayers[i],
                 lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
             lObj.setLatLng(new L.LatLng(ShowExt.dyLat(ity, yOut), ShowExt.dxLon(itx, xOut)));
         }
@@ -80,9 +84,6 @@ ShowExt.prototype.enableDragging = function (callback) {
     var dragStart = function (x, y, o) {
         sx = gmxAPI.merc_x(x);
         sy = gmxAPI.merc_y(y);
-
-        sdx = that.dx,
-        sdy = that.dy;
     };
 
     for (var i = 0; i < ext.length; i++) {
