@@ -275,8 +275,8 @@
         cadastreMapInfoRayonCountRow: "<tr><td class='leftColumn'>Районов:</td><td><strong>{0}</strong></td></tr>",
         cadastreMapInfoOkrugNumberRow: "<tr><td class='leftColumn'>Округ:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\"); return false;'><strong>{0}</strong></a></td></tr>",
         cadastreMapInfoRayonNumberRow: "<tr><td class='leftColumn'>Район:</td><td><a class='pseudoLink' onclick='parentCadastreNumberClick(\"{0}\"); return false;'><strong>{0}</strong></a></td></tr>",
-        cadastreMapInfoPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='image.html?id={0}'><strong>План ЗУ</strong></a><a class='pseudoLink' id='kvartalPlan' target='_blank' href='image.html?id={0}&neighbour=true'><strong>План КК</strong></a></td></tr>",
-        cadastreMapInfoKvartalPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='image.html?id={0}'><strong>План КК</strong></a></td></tr>",
+        cadastreMapInfoPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='http://maps.rosreestr.ru/PortalOnline/image.html?id={0}'><strong>План ЗУ</strong></a><a class='pseudoLink' id='kvartalPlan' target='_blank' href='image.html?id={0}&neighbour=true'><strong>План КК</strong></a></td></tr>",
+        cadastreMapInfoKvartalPlansRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='http://maps.rosreestr.ru/PortalOnline/image.html?id={0}'><strong>План КК</strong></a></td></tr>",
         cadastreMapInfo3DRow: "<tr class='emptyRow'><td colspan='2'><div class='cadastreMapInfoSplitter'></div><td></tr><tr><td colspan='2'><a class='pseudoLink' id='parcelPlan' target='_blank' href='http://maps.rosreestr.ru/portalonline/Cadastre3d/{0}'><strong>3D кадастр</strong></a></td></tr>",
         cadastreMapInfoOksCountRow: "<tr><td class='leftColumn'>ОКС:</td><td><strong>{0}</strong></td></tr>",
 
@@ -902,8 +902,8 @@
     function getPolygon(geometry) {
         var poly = [];
         geometry.forEach(function (value) {
-            poly.push([gmxAPI.from_merc_x(gmxAPI.merc_x(value[0]) - parseFloat(dx).toFixed(2) * (-1)),
-                gmxAPI.from_merc_y(gmxAPI.merc_y(value[1]) - parseFloat(dy).toFixed(2) * (-1))]);
+            poly.push([gmxAPI.from_merc_x(gmxAPI.merc_x(value[0])),
+                gmxAPI.from_merc_y(gmxAPI.merc_y(value[1]))]);
         });
         return poly;
     }
@@ -911,8 +911,8 @@
     function getPolygon_merc2wgs(geometry) {
         var poly = [];
         geometry.forEach(function (value) {
-            poly.push([from_merc_x(value[0] - parseFloat(dx).toFixed(2) * (-1)),
-                from_merc_y(value[1] - parseFloat(dy).toFixed(2) * (-1))]);
+            poly.push([from_merc_x(value[0]),
+                from_merc_y(value[1])]);
         });
         return poly;
     }
@@ -973,8 +973,10 @@
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
-        var yMin = gmxAPI.merc_y(mapExtent.minY) - dy;
-        var yMax = gmxAPI.merc_y(mapExtent.maxY) - dy;
+        //var yMin = gmxAPI.merc_y(mapExtent.minY) - dy;
+        //var yMax = gmxAPI.merc_y(mapExtent.maxY) - dy;
+        var yMin = gmxAPI.merc_y(mapExtent.minY);
+        var yMax = gmxAPI.merc_y(mapExtent.maxY);
         var yHeight = Math.round((yMax - yMin) * gmxAPI._leaflet['mInPixel']);
 
         return yHeight;
