@@ -44,7 +44,7 @@ ShowExt.SOUTH_LIMIT = -ShowExt.NORTH_LIMIT;
 
 
 ShowExt.prototype.enableDragging = function (callback) {
-    var xOut, yOut, ex, ey, sx, sy;
+    var xOut, yOut, ex, ey, sx, sy, sdy, sdx;
     var ext = ShowExt.getImagesExtents(this.dx, this.dy);
 
     var that = this;
@@ -55,12 +55,13 @@ ShowExt.prototype.enableDragging = function (callback) {
         xOut = (sx - gmxAPI.merc_x(x) - that.dx) * (-1);
         yOut = (sy - gmxAPI.merc_y(y) - that.dy) * (-1);
 
-        //for (var i = 0; i < ext.length; i++) {
-        //    var it = ext[i].globalExtent,
-        //        obj = that.imageLayers[i],
-        //        lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
-        //    lObj.setLatLng(new L.LatLng(ShowExt.dyLat(it.maxY, yOut), ShowExt.dxLon(it.minX, xOut)));
-        //}
+        for (var i = 0; i < ext.length; i++) {
+            var itx = ShowExt.dxLon(ext[i].globalExtent.minX, -sdx),
+                ity = ShowExt.dyLat(ext[i].globalExtent.maxY, -sdy),
+                obj = that.imageLayers[i],
+                lObj = gmxAPI._leaflet.mapNodes[obj.objectId].leaflet;
+            lObj.setLatLng(new L.LatLng(ShowExt.dyLat(ity, yOut), ShowExt.dxLon(itx, xOut)));
+        }
 
         if (callback)
             callback(xOut, yOut);
@@ -79,6 +80,9 @@ ShowExt.prototype.enableDragging = function (callback) {
     var dragStart = function (x, y, o) {
         sx = gmxAPI.merc_x(x);
         sy = gmxAPI.merc_y(y);
+
+        sdx = that.dx,
+        sdy = that.dy;
     };
 
     for (var i = 0; i < ext.length; i++) {
