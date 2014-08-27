@@ -969,6 +969,7 @@
     var checkCadastre;
     var gParams = null;
     var infoClickSelected = false;
+    var fnRefreshMap = null;
 
     var getHeight = function () {
         var mapExtent = gmxAPI.map.getVisibleExtent();
@@ -1659,7 +1660,7 @@
         var map = gmxAPI.map;
         var cadastreLegend;
 
-        var fnRefreshMap = function () {
+        fnRefreshMap = function () {
             $(cadastreLegend).toggle(!rbNo.checked);
 
             if (cbDivision.checked) {
@@ -1762,6 +1763,10 @@
             if (dragging)
                 cadastreShowExt.enableDragging(function (xOut, yOut) {
                     $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
+                }, function (dx, dy) {
+                    thematicShowExt.dx = dx;
+                    thematicShowExt.dy = dy;
+                    fnRefreshMap();
                 });
         };
 
@@ -1925,6 +1930,10 @@
                     });
                 cadastreShowExt.enableDragging(function (xOut, yOut) {
                     $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
+                }, function (dx, dy) {
+                    thematicShowExt.dx = dx;
+                    thematicShowExt.dy = dy;
+                    fnRefreshMap();
                 });
             },
             'onCancel': function () {
@@ -2051,8 +2060,8 @@
 
             gParams.initCadastre && this._onClickCadastreTools();
 
-            cadastreShowExt = new ShowExt();
-            thematicShowExt = new ShowExt();
+            cadastreShowExt = new ShowExt(dx, dy);
+            thematicShowExt = new ShowExt(dx, dy);
         },
 
         _onClickCadastreTools: function () {

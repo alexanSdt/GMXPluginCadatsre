@@ -43,7 +43,7 @@ ShowExt.NORTH_LIMIT = 83.0;//gmxAPI.from_merc_y(gmxAPI.merc_x(180.0));
 ShowExt.SOUTH_LIMIT = -ShowExt.NORTH_LIMIT;
 
 
-ShowExt.prototype.enableDragging = function (callback) {
+ShowExt.prototype.enableDragging = function (callback, dragendCallback) {
     var xOut, yOut, ex, ey, sx, sy, sdy, sdx;
     var ext = ShowExt.getImagesExtents(this.dx, this.dy);
 
@@ -78,6 +78,9 @@ ShowExt.prototype.enableDragging = function (callback) {
 
         that.dx = xOut;
         that.dy = yOut;
+
+        if (dragendCallback)
+            dragendCallback(that.dx, that.dy);
     };
 
     // Вызывается при mouseDown
