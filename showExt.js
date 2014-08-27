@@ -387,6 +387,25 @@ ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world,
         lon_min == world.min) {
         //весь экстент
 
+        var norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
+            norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
+
+        return {
+            "imageSize": {
+                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+                "height": ShowExt.getImageHeight(lat_min, lat_max)
+            },
+            "globalExtent": {
+                "minX": ShowExt.dxLon(lon_min, dx), "minY": lat_min, "maxX": ShowExt.dxLon(lon_max, dx), "maxY": lat_max
+            },
+            "normalExtent": {
+                "minX": norm_lon_min,
+                "minY": ShowExt.dyLat(lat_min, -dy),
+                "maxX": norm_lon_max,
+                "maxY": ShowExt.dyLat(lat_max, -dy)
+            }
+        };
+
     } else if (lon_max == world.max) {
         //левый экстент
 
