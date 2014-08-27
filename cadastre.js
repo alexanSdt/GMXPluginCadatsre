@@ -1843,6 +1843,12 @@
         container && _(container, [div]);
 
         this.unloadCadastre = function () {
+
+            cadastreShowExt.dx = cadastreShowExt.dy = 0;
+
+            if (dialog)
+                $(dialog).dialog('close');
+
             $("#loader").hide();
             gmxAPI._tools.standart.removeTool('cadastreInfo');
             gmxAPI._tools.standart.removeTool('cadastreDx');
@@ -1924,6 +1930,7 @@
             'onCancel': function () {
                 cadastreShowExt.disableDragging();
                 gmxAPI._tools.standart.selectTool("move");
+                $(dialog).dialog('close');
             },
             'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
         };

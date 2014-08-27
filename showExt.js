@@ -238,7 +238,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
 
         this.imageLayers[index].setImageExtent({
             "image": this.imagesExtentCache[addr].imageObject,
-            "extent": this.imageExtent.globalExtent
+            "extent": imageExtent.globalExtent
         });
 
     } else {
