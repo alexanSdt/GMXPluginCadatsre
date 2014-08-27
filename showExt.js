@@ -307,25 +307,6 @@ ShowExt.getImageWidth = function (lon_min, lon_max) {
     return ShowExt.merc_to_size(gmxAPI.merc_x(lon_max) - gmxAPI.merc_x(lon_min));
 };
 
-
-//ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world) {
-//    var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
-//        norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
-//    return {
-//        "imageSize": {
-//            "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
-//            "height": ShowExt.getImageHeight(lat_min, lat_max)
-//        },
-//        "globalExtent": {
-//            "minX": lon_min, "minY": lat_min, "maxX": lon_max, "maxY": lat_max
-//        },
-//        "normalExtent": {
-//            "minX": norm_lon_min, "minY": lat_min, "maxX": norm_lon_max, "maxY": lat_max
-//        }
-//    };
-//};
-
-
 ShowExt.createImageExtentSolo = function (lon_min, lat_min, lon_max, lat_max, world, dx, dy) {
     var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
         norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
@@ -383,72 +364,54 @@ ShowExt.getImagesExtents = function (dx, dy) {
 
 ShowExt.createImageExtent = function (lon_min, lat_min, lon_max, lat_max, world, dx, dy) {
 
+    var norm_lon_min,
+        norm_lon_max;
+
+    var minX, maxX;
+
     if (lon_max == world.max &&
         lon_min == world.min) {
         //весь экстент
 
-        var norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
-            norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
+        norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
+        norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
 
-        return {
-            "imageSize": {
-                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
-                "height": ShowExt.getImageHeight(lat_min, lat_max)
-            },
-            "globalExtent": {
-                "minX": ShowExt.dxLon(lon_min, dx), "minY": lat_min, "maxX": ShowExt.dxLon(lon_max, dx), "maxY": lat_max
-            },
-            "normalExtent": {
-                "minX": norm_lon_min,
-                "minY": ShowExt.dyLat(lat_min, -dy),
-                "maxX": norm_lon_max,
-                "maxY": ShowExt.dyLat(lat_max, -dy)
-            }
-        };
+        minX = ShowExt.dxLon(lon_min, dx);
+        maxX = ShowExt.dxLon(lon_max, dx);
 
     } else if (lon_max == world.max) {
         //левый экстент
 
-        var norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
-            norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
+        norm_lon_min = ShowExt.norm_lon(ShowExt.dxLon(lon_min, -dx), world.min),
+        norm_lon_max = ShowExt.norm_lon(lon_max, world.min);
 
-        return {
-            "imageSize": {
-                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
-                "height": ShowExt.getImageHeight(lat_min, lat_max)
-            },
-            "globalExtent": {
-                "minX": lon_min, "minY": lat_min, "maxX": ShowExt.dxLon(lon_max, dx), "maxY": lat_max
-            },
-            "normalExtent": {
-                "minX": norm_lon_min,
-                "minY": ShowExt.dyLat(lat_min, -dy),
-                "maxX": norm_lon_max,
-                "maxY": ShowExt.dyLat(lat_max, -dy)
-            }
-        };
+        minX = lon_min;
+        maxX = ShowExt.dxLon(lon_max, dx);
 
     } else if (lon_min == world.min) {
         //правый экстент
-        var norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
-            norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
+        norm_lon_min = ShowExt.norm_lon(lon_min, world.min),
+        norm_lon_max = ShowExt.norm_lon(ShowExt.dxLon(lon_max, -dx), world.min);
 
-        return {
-            "imageSize": {
-                "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
-                "height": ShowExt.getImageHeight(lat_min, lat_max)
-            },
-            "globalExtent": {
-                "minX": ShowExt.dxLon(lon_min, dx), "minY": lat_min, "maxX": lon_max, "maxY": lat_max
-            },
-            "normalExtent": {
-                "minX": norm_lon_min,
-                "minY": ShowExt.dyLat(lat_min, -dy),
-                "maxX": norm_lon_max,
-                "maxY": ShowExt.dyLat(lat_max, -dy)
-            }
-        };
+        minX = ShowExt.dxLon(lon_min, dx);
+        maxX = lon_max;
     }
+
+    return {
+        "imageSize": {
+            "width": ShowExt.getImageWidth(norm_lon_min, norm_lon_max),
+            "height": ShowExt.getImageHeight(lat_min, lat_max)
+        },
+        "globalExtent": {
+            "minX": minX, "minY": lat_min, "maxX": maxX, "maxY": lat_max
+        },
+        "normalExtent": {
+            "minX": norm_lon_min,
+            "minY": ShowExt.dyLat(lat_min, -dy),
+            "maxX": norm_lon_max,
+            "maxY": ShowExt.dyLat(lat_max, -dy)
+        }
+    };
 };
 
 
