@@ -12,6 +12,22 @@ var ShowExt = function (dx, dy) {
     this.dragging = false;
 };
 
+ShowExt.merc_x = function (lon) {
+    return lon * 20037508.34 / 180;
+};
+
+ShowExt.merc_y = function (lat) {
+    return Math.log(Math.tan((90 + lat) * Math.PI / 360)) / Math.PI * 20037508.34;
+};
+
+ShowExt.from_merc_x = function (x) {
+    return 180 * x / 20037508.34;
+};
+
+ShowExt.from_merc_y = function (y) {
+    return 180 / Math.PI * (2 * Math.atan(Math.exp((y / 20037508.34) * Math.PI)) - Math.PI / 2);
+};
+
 ShowExt.READY = 100;
 ShowExt.EMPTY = 101;
 ShowExt.LOADING = 102;
@@ -204,8 +220,8 @@ ShowExt.getUrlCadastre = function (urlTemplate, imageExtent) {
         size = imageExtent.imageSize;
 
     return ShowExt.replaceTemplate(urlTemplate, {
-        "minX": extent.minX, "minY": extent.minY,
-        "maxX": extent.maxX, "maxY": extent.maxY,
+        "minX": ShowExt.merc_x(extent.minX), "minY": ShowExt.merc_y(extent.minY),
+        "maxX": ShowExt.merc_x(extent.maxX), "maxY": ShowExt.merc_y(extent.maxY),
         "width": size.width, "height": size.height
     });
 };
@@ -264,7 +280,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             if (that._queryCounter == 0) {
                 that._images.length = 0;
                 if (callback)
-                    callback();
+                    callback("ok");
             }
         };
 
@@ -276,7 +292,7 @@ ShowExt.prototype._setImagesExtents = function (urlTemplate, img, imageExtent, i
             if (that._queryCounter == 0) {
                 that._images.length = 0;
                 if (callback)
-                    callback();
+                    callback("err");
             }
         };
 

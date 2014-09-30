@@ -1663,6 +1663,8 @@
         var cadastreLegend;
 
         fnRefreshMap = function () {
+            $("#alert").hide();
+
             $(cadastreLegend).toggle(!rbNo.checked);
 
             if (cbDivision.checked) {
@@ -1677,9 +1679,12 @@
                 if (infoClickSelected)
                     cadastreShowExt.addListener("onClick", function (e) { onCadastreLayerClick(); });
 
-                var cadastreUrlTemplate = "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=4326&imageSR=102100&f=image";
-                cadastreShowExt.showScreenExtent(cadastreUrlTemplate, function () {
+                var cadastreUrlTemplate = "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/Cadastre/MapServer/export?dpi=96&transparent=true&format=png32&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=102100&imageSR=102100&f=image";
+                cadastreShowExt.showScreenExtent(cadastreUrlTemplate, function (status) {
                     $("#loader").hide();
+                    if (status == "err") {
+                        $("#alert").show();
+                    }
                 });
 
                 cadastreShowExt.setCopyright('<a href="http://rosreestr.ru">© Росреестр</a>');
