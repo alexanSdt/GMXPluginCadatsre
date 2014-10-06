@@ -2065,10 +2065,10 @@
                 $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
             }
 
-            gParams.initCadastre && this._onClickCadastreTools();
-
             cadastreShowExt = new ShowExt(dx, dy);
             thematicShowExt = new ShowExt(dx, dy);
+
+            gParams.initCadastre && this._onClickCadastreTools();
         },
 
         _onClickCadastreTools: function () {
