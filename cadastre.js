@@ -23,7 +23,8 @@
         },
         oks: {
             fieldId: "PKK_ID",
-            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/0",
+            //layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/0",
+            layerUrl: "http://maps.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/exts/GKNServiceExtension/online/parcel/find",
             title: "Oks"
         },
         subject: {},
@@ -182,6 +183,39 @@
         ymin: "YMIN",
     };
 
+    var WALL_MATERIALS = {
+        "061001000000": "Стены",
+        "061001001000": "Каменные",
+        "061001001001": "Кирпичные",
+        "061001001002": "Кирпичные облегченные",
+        "061001001003": "Из природного камня",
+        "061001002000": "Деревянные",
+        "061001002001": "Рубленые",
+        "061001002002": "Каркасно-засыпные",
+        "061001002003": "Каркасно-обшивные",
+        "061001002004": "Сборно-щитовые",
+        "061001002005": "Дощатые",
+        "061001002006": "Деревянный каркас без обшивки",
+        "061001003000": "Смешанные",
+        "061001003001": "Каменные и деревянные",
+        "061001003002": "Каменные и бетонные",
+        "061001004000": "Легкие из местных материалов",
+        "061001005000": "Из прочих материалов",
+        "061001006000": "Бетонные",
+        "061001006001": "Монолитные",
+        "061001006002": "Из мелких бетонных блоков",
+        "061001006003": "Из легкобетонных панелей",
+        "061001007000": "Железобетонные",
+        "061001007001": "Крупнопанельные",
+        "061001007002": "Каркасно-панельные",
+        "061001007003": "Монолитные",
+        "061001007004": "Крупноблочные",
+        "061001007005": "Из унифицированных железобетонных элементов",
+        "061001007006": "Из железобетонных сегментов",
+        "061001008000": "Шлакобетонные",
+        "061001009000": "Металлические",
+        "061001999000": "Иное"
+    };
 
     var INFO_WINDOW_CONTENT_TEMPLATE = {
         tabPanel: "<div class='portlet-nav-toolbar'><div class='portlet-nav-toolbar-box'><ul class='portlet-nav-tabs portlet-nav-tabs-content g-layout'><li class='tabs-item2-active'><a class='tabs-item2'><span><span><span class='tab_header'>Информация</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Характеристики</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Кто обслуживает?</span></span></span></a></li><li><a class='tabs-item2'><span><span><span class='tab_header'>Услуги</span></span></span></a></li></ul></div></div>",
@@ -762,7 +796,147 @@
     };
 
     function buildOksInfoWindowContent(feature) {
-        return "Если вы увидели это сообщение, пожалуйста обратитесь в службу поддержки космоснимков, предварительно сделайте снимок карты, и запишите кадастровый номер.";
+        var content = '';
+
+        //Start "MapInfo" 
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerHeader;
+
+        if (feature.attributes[FIELDS.geometryError]) {
+            content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoEmptyMessage;
+        }
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableHeader;
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoStateRow, [(feature.attributes[FIELDS.stateCode] == ' ') ? (NO_DATA) : (PARCEL_STATES[feature.attributes[FIELDS.stateCode] - 1])]);
+
+        if (feature.attributes["DATE_CREATE"] != ' ' && feature.attributes["DATE_CREATE"] > 0) {
+            var d = new Date(feature.attributes["DATE_CREATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoDateRow, [NO_DATA]);
+        }
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoAddressRow, [(feature.attributes[FIELDS.address] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.address])]);
+
+        if (feature.attributes[FIELDS.area] && feature.attributes[FIELDS.area] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAreaRow, [AREA_TYPES[feature.attributes[FIELDS.areaType]] ? (UNITS[feature.attributes[FIELDS.areaType]]) : (''), numberFormat(feature.attributes[FIELDS.area], { thousands_sep: " " }), (feature.attributes[FIELDS.areaUnit]) ? (UNITS[feature.attributes[FIELDS.areaUnit]]) : ('')]);
+        } else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAreaRow, ['Площадь', NO_DATA, '']);
+        }
+
+        if (feature.attributes[FIELDS.formRights] && feature.attributes[FIELDS.formRights] != ' ') {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOwnership, [FORM_RIGHTS[feature.attributes[FIELDS.formRights]]]);
+        } else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOwnership, [NO_DATA]);
+        }
+
+        if (feature.attributes[FIELDS.cadastrePrice] && feature.attributes[FIELDS.cadastrePriceUnit]) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastrePriceRow, [numberFormat(feature.attributes[FIELDS.cadastrePrice], { thousands_sep: " " }), UNITS[feature.attributes[FIELDS.cadastrePriceUnit]]]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCadastrePriceRow, [NO_DATA, '']);
+        }
+
+        if (feature.attributes["ONLINE_ACTUAL_DATE"] != ' ' && feature.attributes["ONLINE_ACTUAL_DATE"] > 0) {
+            var d = new Date(feature.attributes["ONLINE_ACTUAL_DATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOksAttrActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOksAttrActualDateRow, [NO_DATA]);
+        }
+        if (feature.attributes["ACTUAL_DATE"] != ' ' && feature.attributes["ACTUAL_DATE"] > 0) {
+            var d = new Date(feature.attributes["ACTUAL_DATE"]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOksBorderActualDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoOksBorderActualDateRow, [NO_DATA]);
+        }
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreKvartalRow, [feature.attributes[FIELDS.cadastreOkrugNumber] +
+                                                                                                   ':' + feature.attributes[FIELDS.cadastreRayonNumber] +
+                                                                                                   ':' + feature.attributes[FIELDS.cadastreKvartalNumber]]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreRayonRow, [feature.attributes[FIELDS.cadastreOkrugNumber] +
+                                                                                                 ':' + feature.attributes[FIELDS.cadastreRayonNumber]]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.mapInfoCadastreOkrugRow, [feature.attributes[FIELDS.cadastreOkrugNumber]]);
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableFooter;
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerFooter;
+
+        //End "MapInfo"
+        //Start "Info"
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.infoTableHeader;
+
+        //content += dojo.string.substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoLetterRow,
+        //	[(feature.attributes[FIELDS.letter] == ' ')?(NO_DATA):(feature.attributes[FIELDS.letter])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoStoreyCountRow,
+            [(feature.attributes[FIELDS.storeyCount] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.storeyCount])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUndergroundStoreyCountRow,
+            [(feature.attributes[FIELDS.undergroundStoreyCount] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.undergroundStoreyCount])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoWallMaterialRow,
+            [(feature.attributes[FIELDS.wallMaterial] == ' ') ? (NO_DATA) : (WALL_MATERIALS[feature.attributes[FIELDS.wallMaterial]])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoStartOperationYearRow,
+            [(feature.attributes[FIELDS.startOperationYear] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.startOperationYear] + ' г.')]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoEndBuildingYearRow,
+            [(feature.attributes[FIELDS.endBuildingYear] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.endBuildingYear] + ' г.')]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoInventoryCostRow,
+            [(feature.attributes[FIELDS.inventoryCost] == ' ' || feature.attributes[FIELDS.inventoryCost] == -1) ? (NO_DATA) : (numberFormat(feature.attributes[FIELDS.inventoryCost], { thousands_sep: " ", decimals: 0 }) + ' р.')]);
+
+        if (feature.attributes[FIELDS.inventoryCostDate] != ' ') {
+            var d = new Date(feature.attributes[FIELDS.inventoryCostDate]);
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoInventoryCostDateRow, [formatDate(d.getDate(), d.getMonth() + 1, d.getFullYear())]);
+        }
+        else {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoInventoryCostDateRow, [NO_DATA]);
+        }
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBuilderNameRow,
+            [(feature.attributes[FIELDS.builderName] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.builderName])]);
+
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBuilderInnRow,
+            [(feature.attributes[FIELDS.builderInn] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.builderInn])]);
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.infoTableFooter;
+
+        //End "Info"
+        //Start "Zone"
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneListHeader;
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneWaitListItem;
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneListFooter;
+        //End "Zone"
+        //Start "Link"
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.linkListHeader;
+        //for (var linkItem in INFO_WINDOW_CONTENT_TEMPLATE.linkListItems) {
+        //    content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.linkListItems[linkItem], [feature.attributes['PARCEL_CN'], KINDS[feature.attributes[FIELDS.oksType]]]);
+        //}
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.linkListFooter;
+
+        //content += INFO_WINDOW_CONTENT_TEMPLATE.tabFooter;
+        //End "Link"
+
+        searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.infoTableFooter;
+        content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableFooter;
+
+        content += INFO_WINDOW_CONTENT_TEMPLATE.linkListHeader;
+        for (var linkItem in INFO_WINDOW_CONTENT_TEMPLATE.linkListItems) {
+            content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.linkListItems[linkItem], [feature.attributes['PARCEL_CN'], KINDS[feature.attributes[FIELDS.oksType]]]);
+        }
+        content += INFO_WINDOW_CONTENT_TEMPLATE.linkListFooter;
+
+        return content;
     };
 
 

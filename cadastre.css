@@ -17,6 +17,10 @@ div[title='Кадастр']{
   float: right;
 }
 
+.linkList{
+    padding-top: 15px;
+}
+
 .cadastreMapInfoContainer{
     width: 400px; 
     max-height: 170px; 
