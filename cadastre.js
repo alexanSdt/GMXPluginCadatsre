@@ -2270,7 +2270,8 @@
             }
             if (cadastreLayerSearch)
                 cadastreLayerSearch.setVisible(false);
-            inputCadNum.value = '66:41:0402004:16';
+            if (inputCadNum)
+                inputCadNum.value = '66:41:0402004:16';
         },
 
         /** Добавить кадастровую информацию на карту
