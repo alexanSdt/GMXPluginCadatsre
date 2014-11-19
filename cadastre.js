@@ -2180,7 +2180,7 @@
                 initCadastre: false
             }, params);
 
-            var cadastreMenu = this._cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null,
+            this._cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null,
                 _this = this;
 
             cadastreServer = gParams.cadastreServer;
@@ -2191,50 +2191,21 @@
             map = map || globalFlashMap;
             if (!map) return;
 
-            var onCancelCadastreTools = function () {
-                if (checkCadastre != null) {
-                    checkCadastre.unloadCadastre();
-                }
-                $("loader").hide();
-                if (cadastreLayerInfo)
-                    cadastreLayerInfo.setVisible(false);
-                if (balloonInfo)
-                    balloonInfo.remove();
-                if (gmxAPI._tools.standart.getToolByName("cadastreInfo")) {
-                    gmxAPI._tools.standart.removeTool('cadastreInfo');
-                    gmxAPI._tools.standart.removeTool('cadastreDx');
-                    gmxAPI._tools.standart.selectTool("move");
-                }
-                if (mapListenerInfo)
-                    gmxAPI.map.removeListener("onClick", mapListenerInfo);
-                if (mapListenerInfoRight)
-                    gmxAPI.map.removeListener("onClick", mapListenerInfoRight);
-                if (cadastreMenu)
-                    $(cadastreMenu.parentWorkCanvas).remove();
-                if (balloonSearch) {
-                    balloonSearch.remove();
-                    balloonSearch = false;
-                }
-                if (cadastreLayerSearch)
-                    cadastreLayerSearch.setVisible(false);
-                inputCadNum.value = '66:41:0402004:16';
-            }
-
             var attr = {
                 id: "cadastre",
                 rus: "Кадастр",
                 eng: "Cadastre",
                 overlay: true,
                 onClick: this._onClickCadastreTools.bind(this),
-                onCancel: onCancelCadastreTools,
+                onCancel: this._onCancelCadastreTools.bind(this),
                 onmouseover: function () { this.style.color = "orange"; },
                 onmouseout: function () { this.style.color = "wheat"; },
                 hint: "Кадастр"
             };
 
             if (gParams.showToolbar) {
-                var cadastreTools = new gmxAPI._ToolsContainer('cadastre');
-                this._cadastreTool = cadastreTools.addTool('cadastre', attr);
+                this._cadastreTools = new gmxAPI._ToolsContainer('cadastre');
+                this._cadastreTool = this._cadastreTools.addTool('cadastre', attr);
 
                 $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
             }
@@ -2243,6 +2214,11 @@
             thematicShowExt = new ShowExt(dx, dy);
 
             gParams.initCadastre && this._onClickCadastreTools();
+        },
+        
+        unload: function() {
+            this._onCancelCadastreTools();
+            this._cadastreTools && this._cadastreTools.remove();
         },
 
         _onClickCadastreTools: function () {
@@ -2266,6 +2242,36 @@
 
             extendJQuery();
             checkCadastre.load();
+        },
+        
+        _onCancelCadastreTools: function () {
+            if (checkCadastre != null) {
+                checkCadastre.unloadCadastre();
+            }
+            $("loader").hide();
+            if (cadastreLayerInfo)
+                cadastreLayerInfo.setVisible(false);
+            if (balloonInfo)
+                balloonInfo.remove();
+            if (gmxAPI._tools.standart.getToolByName("cadastreInfo")) {
+                gmxAPI._tools.standart.removeTool('cadastreInfo');
+                gmxAPI._tools.standart.removeTool('cadastreDx');
+                gmxAPI._tools.standart.selectTool("move");
+            }
+            if (mapListenerInfo)
+                gmxAPI.map.removeListener("onClick", mapListenerInfo);
+            if (mapListenerInfoRight)
+                gmxAPI.map.removeListener("onClick", mapListenerInfoRight);
+            if (this._cadastreMenu)
+                $(this._cadastreMenu.parentWorkCanvas).remove();
+            if (balloonSearch) {
+                balloonSearch.remove();
+                balloonSearch = false;
+            }
+            if (cadastreLayerSearch)
+                cadastreLayerSearch.setVisible(false);
+            if (inputCadNum)
+                inputCadNum.value = '66:41:0402004:16';
         },
 
         /** Добавить кадастровую информацию на карту
