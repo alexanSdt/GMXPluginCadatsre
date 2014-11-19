@@ -1444,7 +1444,7 @@
                 "properties": { "isVisible": true, "text": "" },
                 "geometry": geometry
             }]);
-            sendCrossDomainPostRequest(serverBase + "Shapefile.ashx", {
+            sendCrossDomainPostRequest(window.serverBase || ("http://" + gmxAPI.serverBase + "/") + "Shapefile.ashx", {
                 name: fileName + (!(cadastreShowExt.dx || cadastreShowExt.dy) ? "" : "_смещ"),
                 format: "Shape",
                 points: '',
@@ -2066,7 +2066,7 @@
         }
 
         this.setCadastreVisibility = function (isVisible) {
-            $(cbDivision).prop('checked', isVisible);
+            cbDivision.checked = isVisible;
             fnRefreshMap();
         }
     };
