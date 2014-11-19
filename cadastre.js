@@ -1444,8 +1444,8 @@
                 "properties": { "isVisible": true, "text": "" },
                 "geometry": geometry
             }]);
-            sendCrossDomainPostRequest(window.serverBase || ("http://" + gmxAPI.serverBase + "/") + "Shapefile.ashx", {
-                name: fileName + (!(cadastreShowExt.dx || cadastreShowExt.dy) ? "" : "_смещ"),
+            sendCrossDomainPostRequest((window.serverBase || ("http://" + gmxAPI.serverBase + "/")) + "Shapefile.ashx", {
+                name: fileName + (!(parseInt(cadastreShowExt.dx) || parseInt(cadastreShowExt.dy)) ? "" : "_смещ"),
                 format: "Shape",
                 points: '',
                 lines: '',
