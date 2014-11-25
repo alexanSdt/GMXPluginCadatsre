@@ -1547,15 +1547,17 @@
 
                 var featureSet = [];
 
-                if (data.results.length > 1) {
+
+                if (searchValue && data.results.length > 1) {
                     for (var i = 0; i < data.results.length; i++) {
                         if (data.results[i].value == searchValue) {
                             featureSet = [data.results[i]];
+                            searchValue = null;
                             break;
                         }
                     }
                 } else {
-                    featureSet = data.results;
+                    featureSet = [data.results[0]];
                 }
 
                 var objectType = getCadastreObjectType(featureSet[0]);
@@ -2232,8 +2234,8 @@
 
             gParams.initCadastre && this._onClickCadastreTools();
         },
-        
-        unload: function() {
+
+        unload: function () {
             this._onCancelCadastreTools();
             this._cadastreTools && this._cadastreTools.remove();
         },
@@ -2260,7 +2262,7 @@
             extendJQuery();
             checkCadastre.load();
         },
-        
+
         _onCancelCadastreTools: function () {
             if (checkCadastre != null) {
                 checkCadastre.unloadCadastre();
