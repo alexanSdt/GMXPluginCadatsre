@@ -1545,7 +1545,18 @@
         }, function (data) {
             if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
 
-                var featureSet = data.results;
+                var featureSet = [];
+
+                if (data.results.length > 1) {
+                    for (var i = 0; i < data.results.length; i++) {
+                        if (data.results[i].value == searchValue) {
+                            featureSet = [data.results[i]];
+                            break;
+                        }
+                    }
+                } else {
+                    featureSet = data.results;
+                }
 
                 var objectType = getCadastreObjectType(featureSet[0]);
 
@@ -1616,6 +1627,8 @@
         return cadastreNumber;
     }
 
+    var searchValue = null;
+
     var cadastreSearch = function (map, value) {
 
         aj.abort();
@@ -1630,6 +1643,9 @@
             $("#alert").hide();
 
             if (cadType == CadastreTypes.parcel) {
+
+                searchValue = normalizeSearchCadastreNumber(value);
+
                 aj.ajax(cadType.layerUrl, {
                     crossDomain: true,
                     type: "GET",
@@ -1644,6 +1660,7 @@
                         f: 'json'
                     }
                 }, function (data) {
+
                     $('#loader').hide();
 
                     if (data.features.length == 0) {
