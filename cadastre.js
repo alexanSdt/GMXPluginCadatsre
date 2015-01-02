@@ -613,7 +613,9 @@
         if (feature.attributes[FIELDS.cadastreKvartalNumber] || feature.attributes[FIELDS.cadastreRayonNumber]) {
             content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoAttrActualDateRow, [""]);
             content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoBorderActualDateRow, [""]);
-            searchOkrugDate(feature.attributes[FIELDS.cadastreOkrugNumber]);
+            if (!silent) {
+                searchOkrugDate(feature.attributes[FIELDS.cadastreOkrugNumber]);
+            }
         }
         else {
             if (feature.attributes["ONLINE_ACTUAL_DATE"] != ' ' && feature.attributes["ONLINE_ACTUAL_DATE"] > 0) {
@@ -659,8 +661,9 @@
 
             //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneListFooter;
             //content += INFO_WINDOW_CONTENT_TEMPLATE.tabFooter;
-
-            searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+            if (!silent) {
+                searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+            }
             //End "Zone"
         }
         else {
@@ -755,8 +758,13 @@
         //End "MapInfo"
 
         //Start "Info"
-        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCategory,
-            [(feature.attributes[FIELDS.category] == ' ') ? (NO_DATA) : (CATEGORY_TYPES[feature.attributes[FIELDS.category]])]);
+        //******************************************************************************************************************************
+        var category = (feature.attributes[FIELDS.category] == ' ') ? (NO_DATA) : (CATEGORY_TYPES[feature.attributes[FIELDS.category]]);
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoCategory, [category]);
+        if (silent) {
+            currentFeature.properties.category = category;
+        }
+        //******************************************************************************************************************************
 
         content += INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationRow;
 
@@ -764,20 +772,32 @@
             [(feature.attributes[FIELDS.utilizationCode] == ' ') ? (NO_DATA) : (feature.attributes[FIELDS.utilizationCode])]);
 
         //if(UTILIZATIONS[feature.attributes[FIELDS.utilizationCode]]) {
-        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationVRIZRow,
-            [(!feature.attributes[FIELDS.utilizationCode] || feature.attributes[FIELDS.utilizationCode] == ' ') ?
-                (NO_DATA) : (UTILIZATIONS[feature.attributes[FIELDS.utilizationCode]])]);
-        //}
+        //******************************************************************************************************************************
+        var utilization = (!feature.attributes[FIELDS.utilizationCode] || feature.attributes[FIELDS.utilizationCode] == ' ') ?
+                (NO_DATA) : (UTILIZATIONS[feature.attributes[FIELDS.utilizationCode]])
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationVRIZRow, [utilization]);
+        if (silent) {
+            currentFeature.properties.utilization = utilization;
+        }
+        //******************************************************************************************************************************
 
-        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationDocRow,
-            [(!feature.attributes[FIELDS.utilizationDoc] || feature.attributes[FIELDS.utilizationDoc] == ' ') ?
-                (NO_DATA) : (feature.attributes[FIELDS.utilizationDoc])]);
+        //******************************************************************************************************************************
+        var utilizationDoc = (!feature.attributes[FIELDS.utilizationDoc] || feature.attributes[FIELDS.utilizationDoc] == ' ') ?
+                (NO_DATA) : (feature.attributes[FIELDS.utilizationDoc])
+        content += substitute(INFO_WINDOW_CONTENT_TEMPLATE.infoUtilizationDocRow, [utilizationDoc]);
+        if (silent) {
+            currentFeature.properties.utilizationDoc = utilizationDoc;
+        }
+        //******************************************************************************************************************************
+
 
         //End "Info"
 
         //Start "Zone"
         //content += INFO_WINDOW_CONTENT_TEMPLATE.zoneWaitListItem;
-        searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+        if (!silent) {
+            searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+        }
         //End "Zone"
 
         ////Start "Link"
@@ -1419,12 +1439,24 @@
     function showInfoWindow(objectType, featureSet) {
         $("#loader").hide();
         $("#alert").hide();
-        balloonInfo.setVisible(true);
-        balloonInfo.visible = true;
+        if (!silent) {
+            balloonInfo.setVisible(true);
+            balloonInfo.visible = true;
+        } else {
+            balloonInfo.setVisible(false);
+            balloonInfo.visible = false;
+        }
 
         var html = "<div style='width: 370px; max-height: 230px; min-height: 150px; overflow-x: auto; overflow-y: auto;'>";
 
         var title = '<div class="cadastreTitle">' + buildInfoWindowTitle(objectType, featureSet.features[0]) + '</div>';
+
+        //******************************************************************************************************************************
+        var cadastreNumber = featureSet.features[0].attributes.CAD_NUM
+        if (silent) {
+            currentFeature.properties.KN = cadastreNumber;
+        }
+        //******************************************************************************************************************************
 
         addCadastreNumbers(featureSet.features[0].attributes);
         addPointAttribute(featureSet.features);
@@ -1434,8 +1466,21 @@
 
         balloonInfo.div.innerHTML = title + content + dwnld;
 
+        //
+        //
+        //========================
+        if (silent) {
+            currentFeature.properties.status = "готово";
+            dequeueRequest();
+        }
+        //========================
+        //
+        //
+
         var world = ShowExt.getWorldByLon(balloonInfo.getX());
-        showGeometry(geometry, world, balloonInfo.getX());
+        if (!silent) {
+            showGeometry(geometry, world, balloonInfo.getX());
+        }
 
         var fileName = replaceAll(featureSet.features[0].attributes[FIELDS.cadastreNumber], ":", "_");
 
@@ -1471,6 +1516,10 @@
         }, function () {
             $('#loader').hide();
             $("#alert").show();
+            if (silent) {
+                currentFeature.properties.status = "ошибка при получении данных";
+                dequeueRequest();
+            }
         });
     };
 
@@ -1495,8 +1544,15 @@
         }, function () {
             $('#loader').hide();
             $("#alert").show();
+            if (silent) {
+                currentFeature.properties.status = "ошибка при получении данных";
+                dequeueRequest();
+            }
         });
     };
+
+    //окно не  будет показано, данные сохраняются в контейнере
+    var silent = false;
 
     var createBalloonInfo = function (x, y, extent, layerId) {
         if (geometryRequest)
@@ -1535,7 +1591,7 @@
                 f: 'json',
                 geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":102100}}',
                 tolerance: '0',
-                returnGeometry: 'true',
+                returnGeometry: (silent ? 'false' : 'true'),
                 mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
                 imageDisplay: map.width() + ',' + getHeight() + ',96',
                 geometryType: 'esriGeometryPoint',
@@ -1573,25 +1629,101 @@
                     searchParcelObject(objectType, { cadNums: "[" + cadNumbers.substring(1) + "]", onlyAttributes: false });
                 }
                 else {
-                    searchObject(objectType, getObjectIdField(objectType) + " IN (" + whereClause.substring(1) + ")");
+                    if (objectType) {
+                        searchObject(objectType, getObjectIdField(objectType) + " IN (" + whereClause.substring(1) + ")");
+                    } else {
+                        currentFeature.properties.status = "проверить вручную";
+                        dequeueRequest();
+                    }
                 }
 
-                geometry = getGeometry_merc2wgs(featureSet[0].geometry.rings);
+                if (!silent) {
+                    geometry = getGeometry_merc2wgs(featureSet[0].geometry.rings);
+                }
 
             } else {
                 $("#loader").hide();
                 $("#alert").show();
+                if (silent) {
+                    currentFeature.properties.status = "проверить вручную";
+                    dequeueRequest();
+                }
             }
         }, function () {
             $('#loader').hide();
             $("#alert").show();
+            if (silent) {
+                currentFeature.properties.status = "ошибка при получении данных";
+                dequeueRequest();
+            }
         });
 
         balloonInfo.resize();
         balloonInfo.addListener('onClose', function (obj) {
             cadastreLayerInfo.setVisible(false);
         });
-    }
+    };
+
+    var currentFeature = null;
+
+    //глобальная функция 
+    window.createInfo = function (feature) {
+        currentFeature = feature;
+        currentFeature.properties.category = "";
+        currentFeature.properties.utilization = "";
+        currentFeature.properties.utilizationDoc = "";
+        currentFeature.properties.status = "";
+
+        var x = feature.geometry.coordinates[0],
+            y = feature.geometry.coordinates[1];
+
+        var extent = { minX: x, minY: y, maxX: x, maxY: y };
+
+        createBalloonInfo(x, y, extent, "");
+    };
+
+    window.setSilent = function (s) {
+        silent = s;
+    };
+
+    var counter = 0;
+    var pendingsQueue = [];
+
+    function queue(feature) {
+        if (counter >= 1) {
+            pendingsQueue.push(feature);
+        } else {
+            exec(feature);
+        }
+    };
+
+    function exec(feature) {
+        counter++;
+        createInfo(feature);
+    };
+
+    function dequeueRequest() {
+        counter--;
+        if (pendingsQueue.length && counter < 1) {
+            exec(whilePendings());
+        }
+    };
+
+    function whilePendings() {
+        while (pendingsQueue.length) {
+            return pendingsQueue.shift();
+        }
+    };
+
+    window.loadPoints = function (url) {
+        window.setSilent(true);
+        $.getJSON(url, function (obj) {
+            window.points = obj;
+            for (var i = 0; i < obj.features.length; i++) {
+                queue(obj.features[i]);
+            }
+        });
+    };
 
     var checkCadastreNumber = function (searchedText) {
         var cadastreNumber = "", url;

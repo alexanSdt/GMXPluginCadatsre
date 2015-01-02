@@ -1,10 +1,10 @@
 var AjaxEx = function () {
     //это массив аджаксов, который можно отменять(xhr.abort()).
     this._ajaxArr = [];
-    
 
-    this.ajax = function (url, params, success, error) {
-        var xhrObj = $.ajax(url, params).done(success).fail(error);
+
+    this.ajax = function (url, params, success, error, always) {
+        var xhrObj = $.ajax(url, params).done(success).fail(error).always(function () { if (always) always(); });
         this._ajaxArr.push(xhrObj);
         return xhrObj;
     };
