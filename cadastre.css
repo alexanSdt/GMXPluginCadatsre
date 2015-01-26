@@ -17,6 +17,17 @@ div[title='Кадастр']{
   float: right;
 }
 
+.grey{
+  display: none;
+  background-image: url(map-loader-grey.gif) !important;
+  background-size: 23px;
+  height: 23px;
+  width: 23px;
+  float: right;
+  margin-top: 15px;
+  margin-right: 5px;
+}
+
 .linkList{
     padding-top: 15px;
 }

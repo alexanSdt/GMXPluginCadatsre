@@ -1593,7 +1593,7 @@
                 tolerance: '0',
                 returnGeometry: (silent ? 'false' : 'true'),
                 mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
-                imageDisplay: map.width() + ',' + getHeight() + ',96',
+                imageDisplay: gmxAPI.map.width() + ',' + getHeight() + ',96',
                 geometryType: 'esriGeometryPoint',
                 sr: '102100',
                 layers: layerId || 'top' //top or all or layerId
@@ -1809,7 +1809,7 @@
                         maxY = ShowExt.dyLat(converting(data.features[0].attributes.YMAX, "y"), cadastreShowExt.dy),
                         minY = ShowExt.dyLat(converting(data.features[0].attributes.YMIN, "y"), cadastreShowExt.dy);
 
-                    map.zoomToExtent(minX, minY, maxX, maxY);
+                    gmxAPI.map.zoomToExtent(minX, minY, maxX, maxY);
                     createBalloonInfo(x, y, { minX: minX, minY: minY, maxX: maxX, maxY: maxY }, "");
 
                 }, function () {
@@ -1856,10 +1856,10 @@
                         minX += 360;
                         maxX += 360;
                     }
-                    map.zoomToExtent(minX, minY, maxX, maxY);
+                    gmxAPI.map.zoomToExtent(minX, minY, maxX, maxY);
 
                     var html = "<div style='width:300px; height:300px; overflow-x: hidden; overflow-y: scroll;'>";
-                    balloonInfo = map.addBalloon();
+                    balloonInfo = gmxAPI.map.addBalloon();
                     balloonInfo.setPoint((x < 0 ? x + 360 : x), y);
                     balloonInfo.setVisible(false);
 
@@ -2028,9 +2028,9 @@
                 if (balloonInfo)
                     balloonInfo.remove();
                 if (mapListenerInfo)
-                    map.removeListener("onClick", mapListenerInfo);
+                    gmxAPI.map.removeListener("onClick", mapListenerInfo);
                 if (mapListenerInfoRight)
-                    map.removeListener("onClick", mapListenerInfoRight);
+                    gmxAPI.map.removeListener("onClick", mapListenerInfoRight);
                 if (balloonSearch)
                     balloonSearch.remove();
                 if (cadastreLayerSearch)
@@ -2084,7 +2084,7 @@
                 thematicShowExt.remove();
                 thematicShowExt.clearImagesCache();
                 thematicShowExt.initialize();
-                thematicShowExt.showScreenExtent(tUrl + "&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=4326&imageSR=102100&f=image");
+                thematicShowExt.showScreenExtent(tUrl + "&bbox={minX}%2C{minY}%2C{maxX}%2C{maxY}&size={width},{height}&bboxSR=102100&imageSR=102100&f=image");
             }
 
             thematicShowExt.setDepth(950);
@@ -2191,7 +2191,7 @@
             gmxAPI._tools.standart.removeTool('cadastreDx');
 
             if (iListenerID)
-                map.removeListener("onMoveEnd", iListenerID);
+                gmxAPI.map.removeListener("onMoveEnd", iListenerID);
             if (cadastreLayerInfo)
                 cadastreLayerInfo.remove();
 
@@ -2212,6 +2212,11 @@
                 cadastreLayerSearch.setVisible(false);
             inputCadNum.value = '66:41:0402004:16';
             gmxAPI._tools.standart.selectTool('move');
+
+            if (cadastreToolsGroup) {
+                cadastreToolsGroup.removeFrom(gmxAPI._leaflet.LMap);
+                cadastreToolsGroup = null;
+            }
             // gmxAPI._tools.standart.removeTool("cadastreInfo");
             // gmxAPI._tools.standart.removeTool("cadastreDx");
         }
@@ -2226,9 +2231,9 @@
 
         aj.abort();
 
-        var mousePosX = map.getMouseX();
-        var mousePosY = map.getMouseY();
-        var extent = map.getVisibleExtent();
+        var mousePosX = gmxAPI.map.getMouseX();
+        var mousePosY = gmxAPI.map.getMouseY();
+        var extent = gmxAPI.map.getVisibleExtent();
         if (balloonSearch) {
             balloonSearch.remove();
             balloonSearch = false;
@@ -2246,67 +2251,119 @@
         }
     };
 
+    var cadastreToolsGroup = null;
+
+    function enableInfo() {
+        cadastreShowExt.addListener("onClick", function (e) { onCadastreLayerClick(); });
+        infoClickSelected = true;
+    };
+
+    function disableInfo() {
+        infoClickSelected = false;
+        gmxAPI._tools.standart.selectTool("move");
+
+        cadastreShowExt.removeListener("onclick");
+
+        if (cadastreLayerInfo)
+            cadastreLayerInfo.remove();
+        if (balloonInfo) {
+            balloonInfo.remove();
+            balloonInfo = false;
+        }
+    };
+
+    function enableDx() {
+        var $str = $('<div id="coord">dx: ' + cadastreShowExt.dx + ';<br /> dy: ' + cadastreShowExt.dy + ';</div>');
+        if (!dialog)
+            dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
+                dialog = null;
+            });
+        cadastreShowExt.enableDragging(function (xOut, yOut) {
+            $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
+        }, function (dx, dy) {
+            thematicShowExt.dx = dx;
+            thematicShowExt.dy = dy;
+            fnRefreshMap();
+        });
+    };
+
+    function disableDx() {
+        cadastreShowExt.disableDragging();
+        gmxAPI._tools.standart.selectTool("move");
+        $(dialog).dialog('close');
+    };
+
     var addCadastreInfoTool = function () {
-        map = gmxAPI.map;
-        var cadastreDx = {
-            'key': "cadastreDx",
-            'activeStyle': {},
-            'regularStyle': { 'paddingLeft': '2px' },
-            'regularImageUrl': gmxCore.getModulePath("cadastre") + "arrow.png",
-            'activeImageUrl': gmxCore.getModulePath("cadastre") + "arrow_active.png",
-            'onClick': function () {
-                var $str = $('<div id="coord">dx: ' + cadastreShowExt.dx + ';<br /> dy: ' + cadastreShowExt.dy + ';</div>');
-                if (!dialog)
-                    dialog = showDialog("Координаты калибровки", $str.get(0), 200, 65, false, false, null, function () {
-                        dialog = null;
-                    });
-                cadastreShowExt.enableDragging(function (xOut, yOut) {
-                    $("#coord").html("dx: " + xOut.toFixed(2) + ";<br /> dy: " + yOut.toFixed(2) + ";");
-                }, function (dx, dy) {
-                    thematicShowExt.dx = dx;
-                    thematicShowExt.dy = dy;
-                    fnRefreshMap();
-                });
-            },
-            'onCancel': function () {
-                cadastreShowExt.disableDragging();
-                gmxAPI._tools.standart.selectTool("move");
-                $(dialog).dialog('close');
-            },
-            'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
-        };
 
-        var cadastreTool = {
-            'key': "cadastreInfo",
-            'activeStyle': {},
-            'regularStyle': { 'paddingLeft': '2px' },
-            'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
-            'activeImageUrl': gmxCore.getModulePath("cadastre") + "information_active.png",
-            'onClick': function () {
+        if (cadastreToolsGroup) return;
 
-                cadastreShowExt.addListener("onClick", function (e) { onCadastreLayerClick(); });
-                infoClickSelected = true;
+        var old = true;
 
-            },
-            'onCancel': function () {
-                infoClickSelected = false;
-                gmxAPI._tools.standart.selectTool("move");
+        if (!nsGmx.GeomixerFrameworkVersion) {
+            var cadastreDx = {
+                'key': "cadastreDx",
+                'activeStyle': {},
+                'regularStyle': { 'paddingLeft': '2px' },
+                'regularImageUrl': gmxCore.getModulePath("cadastre") + "arrow.png",
+                'activeImageUrl': gmxCore.getModulePath("cadastre") + "arrow_active.png",
+                'onClick': enableDx,
+                'onCancel': disableDx,
+                'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Ввод dx,dy", "Enter dx,dy")
+            };
 
-                cadastreShowExt.removeListener("onclick");
+            var cadastreTool = {
+                'key': "cadastreInfo",
+                'activeStyle': {},
+                'regularStyle': { 'paddingLeft': '2px' },
+                'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
+                'activeImageUrl': gmxCore.getModulePath("cadastre") + "information_active.png",
+                'onClick': enableInfo,
+                'onCancel':disableInfo,
+                'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Информация о КУ", "Cadastre information")
+            };
 
-                if (cadastreLayerInfo)
-                    cadastreLayerInfo.remove();
-                if (balloonInfo) {
-                    balloonInfo.remove();
-                    balloonInfo = false;
-                }
-            },
-            'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Информация о КУ", "Cadastre information")
-        };
+            if (!gmxAPI._tools.standart.getToolByName("cadastreInfo")) {
+                gmxAPI._tools.standart.addTool('cadastreInfo', cadastreTool);
+                gmxAPI._tools.standart.addTool('cadastreDx', cadastreDx);
+            }
+        } else {
+            //grey interface
+            var btnHand = new L.Control.gmxIcon({
+                'id': "cadastreHand",
+                'regularImageUrl': gmxCore.getModulePath("cadastre") + "hand.png",
+            });
 
-        if (!gmxAPI._tools.standart.getToolByName("cadastreInfo")) {
-            gmxAPI._tools.standart.addTool('cadastreInfo', cadastreTool);
-            gmxAPI._tools.standart.addTool('cadastreDx', cadastreDx);
+            btnHand.on('click', function (e) {
+                disableInfo();
+                disableDx();
+            });
+
+            var btnDx = new L.Control.gmxIcon({
+                'id': "cadastreDx",
+                'regularImageUrl': gmxCore.getModulePath("cadastre") + "arrow.png",
+            });
+
+            btnDx.on('click', function (e) {
+                disableInfo();
+                enableDx();
+            });
+
+            var btnInfo = new L.Control.gmxIcon({
+                'id': "cadastreInfo",
+                'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
+            });
+
+            btnInfo.on('click', function (e) {
+                disableDx();
+                enableInfo();
+            });
+
+            cadastreToolsGroup = new L.Control.gmxIconGroup({
+                'singleSelection': true,
+                'isSortable': true,
+                'items': [btnHand, btnInfo, btnDx]
+            });
+            cadastreToolsGroup.addTo(gmxAPI._leaflet.LMap);
         }
     };
 
@@ -2358,7 +2415,11 @@
                 this._cadastreTools = new gmxAPI._ToolsContainer('cadastre');
                 this._cadastreTool = this._cadastreTools.addTool('cadastre', attr);
 
-                $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
+                if (nsGmx.GeomixerFrameworkVersion) {
+                    $(".leaflet-top.leaflet-right").append('<div id="loader" class="grey"></div>');
+                } else {
+                    $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
+                }
             }
 
             cadastreShowExt = new ShowExt(dx, dy);
@@ -2370,6 +2431,10 @@
         unload: function () {
             this._onCancelCadastreTools();
             this._cadastreTools && this._cadastreTools.remove();
+            if (cadastreToolsGroup) {
+                cadastreToolsGroup.removeFrom(gmxAPI._leaflet.LMap);
+                cadastreToolsGroup = null;
+            }
         },
 
         _onClickCadastreTools: function () {
