@@ -2339,7 +2339,6 @@
                 } else {
                     disableDx();
                 }
-                console.log(e);
             });
 
             var btnInfo = new L.Control.gmxIcon({
@@ -2348,13 +2347,13 @@
             });
 
             btnInfo.on('click', function (e) {
+                disableInfo();
                 if (e.target.options.isActive) {
                     disableDx();
                     enableInfo();
                 } else {
                     disableInfo();
                 }
-                console.log(e);
             });
 
             cadastreToolsGroup = new L.Control.gmxIconGroup({
