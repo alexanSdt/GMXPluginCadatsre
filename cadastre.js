@@ -2262,7 +2262,7 @@
         infoClickSelected = false;
         gmxAPI._tools.standart.selectTool("move");
 
-        cadastreShowExt.removeListener("onclick");
+        cadastreShowExt.removeListener("onClick");
 
         if (cadastreLayerInfo)
             cadastreLayerInfo.remove();
@@ -2333,8 +2333,10 @@
             });
 
             btnDx.on('click', function (e) {
-                if (e.target.options.isActive) {
+                if (infoClickSelected) {
                     disableInfo();
+                }
+                if (e.target.options.isActive) {
                     enableDx();
                 } else {
                     disableDx();
@@ -2347,12 +2349,12 @@
             });
 
             btnInfo.on('click', function (e) {
-                disableInfo();
+                if (infoClickSelected) {
+                    disableInfo();
+                }
                 if (e.target.options.isActive) {
                     disableDx();
                     enableInfo();
-                } else {
-                    disableInfo();
                 }
             });
 
