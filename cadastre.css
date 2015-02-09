@@ -123,3 +123,23 @@ div[title='Кадастр']{
      border: 1px solid #800; 
      padding: 4px; 
     } */
+
+.leaflet-gmx-icon-cadastreDx{
+    background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
+    background-position: -145px -59px;
+}
+
+.leaflet-gmx-icon-cadastreDx-active{
+    background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
+    background-position: -145px -92px;
+}
+
+.leaflet-gmx-icon-cadastreInfo{
+    background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
+    background-position: -297px -58px;
+}
+
+.leaflet-gmx-icon-cadastreInfo-active{
+    background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
+    background-position: -297px -91px;
+}

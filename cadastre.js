@@ -2327,41 +2327,40 @@
                 gmxAPI._tools.standart.addTool('cadastreDx', cadastreDx);
             }
         } else {
-            //grey interface
-            var btnHand = new L.Control.gmxIcon({
-                'id': "cadastreHand",
-                'regularImageUrl': gmxCore.getModulePath("cadastre") + "hand.png",
-            });
-
-            btnHand.on('click', function (e) {
-                disableInfo();
-                disableDx();
-            });
-
             var btnDx = new L.Control.gmxIcon({
                 'id': "cadastreDx",
-                'regularImageUrl': gmxCore.getModulePath("cadastre") + "arrow.png",
+                'togglable': true
             });
 
             btnDx.on('click', function (e) {
-                disableInfo();
-                enableDx();
+                if (e.target.options.isActive) {
+                    disableInfo();
+                    enableDx();
+                } else {
+                    disableDx();
+                }
+                console.log(e);
             });
 
             var btnInfo = new L.Control.gmxIcon({
                 'id': "cadastreInfo",
-                'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
+                'togglable': true
             });
 
             btnInfo.on('click', function (e) {
-                disableDx();
-                enableInfo();
+                if (e.target.options.isActive) {
+                    disableDx();
+                    enableInfo();
+                } else {
+                    disableInfo();
+                }
+                console.log(e);
             });
 
             cadastreToolsGroup = new L.Control.gmxIconGroup({
                 'singleSelection': true,
                 'isSortable': true,
-                'items': [btnHand, btnInfo, btnDx]
+                'items': [btnInfo, btnDx]
             });
             cadastreToolsGroup.addTo(gmxAPI._leaflet.LMap);
         }
