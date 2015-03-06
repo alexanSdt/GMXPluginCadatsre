@@ -136,10 +136,10 @@ div[title='Кадастр']{
 
 .leaflet-gmx-icon-cadastreInfo{
     background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
-    background-position: -297px -58px;
+    background-position: -612px -60px;
 }
 
 .leaflet-gmx-icon-cadastreInfo-active{
     background-image: url("http://new.test2.kosmosnimki.ru/api/leaflet/plugins/gmxControls/dist/css/img/gmxSprite.png");
-    background-position: -297px -91px;
+    background-position: -612px -92px;
 }

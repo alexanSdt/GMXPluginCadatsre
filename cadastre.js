@@ -1591,7 +1591,7 @@
                 f: 'json',
                 geometry: '{"x":' + geoX + ',"y":' + geoY + ',"spatialReference":{"wkid":102100}}',
                 tolerance: '0',
-                returnGeometry: (silent ? 'false' : 'true'),
+                returnGeometry: (silent ? 'false' : ''),
                 mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
                 imageDisplay: gmxAPI.map.width() + ',' + getHeight() + ',96',
                 geometryType: 'esriGeometryPoint',
@@ -2318,7 +2318,7 @@
                 'regularImageUrl': gmxCore.getModulePath("cadastre") + "information.png",
                 'activeImageUrl': gmxCore.getModulePath("cadastre") + "information_active.png",
                 'onClick': enableInfo,
-                'onCancel':disableInfo,
+                'onCancel': disableInfo,
                 'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Информация о КУ", "Cadastre information")
             };
 
@@ -2329,7 +2329,8 @@
         } else {
             var btnDx = new L.Control.gmxIcon({
                 'id': "cadastreDx",
-                'togglable': true
+                'togglable': true,
+                'title': "Смещение карты"
             });
 
             btnDx.on('click', function (e) {
@@ -2345,7 +2346,8 @@
 
             var btnInfo = new L.Control.gmxIcon({
                 'id': "cadastreInfo",
-                'togglable': true
+                'togglable': true,
+                'title': "Информация об участке"
             });
 
             btnInfo.on('click', function (e) {
