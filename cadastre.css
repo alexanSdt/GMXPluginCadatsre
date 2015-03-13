@@ -5,7 +5,7 @@
 	background: url('loader.GIF');
 	position: absolute;
 }*/
-div[title='Кадастр']{
+div[title='Кадастр Росреестра']{
 	float: left;
 }
 #loader{

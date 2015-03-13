@@ -2403,14 +2403,14 @@
 
             var attr = {
                 id: "cadastre",
-                rus: "Кадастр",
+                rus: "Кадастр Росреестра",
                 eng: "Cadastre",
                 overlay: true,
                 onClick: this._onClickCadastreTools.bind(this),
                 onCancel: this._onCancelCadastreTools.bind(this),
                 onmouseover: function () { this.style.color = "orange"; },
                 onmouseout: function () { this.style.color = "wheat"; },
-                hint: "Кадастр"
+                hint: "Кадастр Росреестра"
             };
 
             if (gParams.showToolbar) {
@@ -2420,7 +2420,7 @@
                 if (nsGmx.GeomixerFrameworkVersion) {
                     $(".leaflet-top.leaflet-right").append('<div id="loader" class="grey"></div>');
                 } else {
-                    $("div[title='Кадастр']").parent().append('<div id="loader"></div>');
+                    $("div[title='Кадастр Росреестра']").parent().append('<div id="loader"></div>');
                 }
             }
 
@@ -2449,7 +2449,7 @@
                         }
                         gmxAPI._tools.cadastre.setActiveTool(false);
                     },
-                    path: ["Кадастровые данные"]
+                    path: ["Кадастр Росреестра"]
                 });
                 if (!alreadyLoaded) {
                     container = this._cadastreMenu.workCanvas;
