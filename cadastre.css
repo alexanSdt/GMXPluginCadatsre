@@ -5,6 +5,10 @@
 	background: url('loader.GIF');
 	position: absolute;
 }*/
+.leaflet-clickable-raster-layer {
+    cursor: help;
+}
+
 div[title='Кадастр Росреестра']{
 	float: left;
 }
@@ -92,6 +96,10 @@ div[title='Кадастр Росреестра']{
 {
 	height: 19px;
 }
+.disabledLabel {
+    color: #999;
+}
+
 .cadastreLeftMenuContainer
 {
 	margin: 10px 25px 10px 30px;
