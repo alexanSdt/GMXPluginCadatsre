@@ -5,6 +5,9 @@
 	background: url('loader.GIF');
 	position: absolute;
 }*/
+.pseudoLink {
+	cursor: pointer;
+}
 .leaflet-clickable-raster-layer {
     cursor: help;
 }
