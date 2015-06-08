@@ -205,39 +205,6 @@
                 });
 
             var cadastreToolsGroup;
-            if (gParams.showToolbar) {
-                cadastreToolsGroup = new L.Control.gmxIconGroup({
-                    singleSelection: true,
-                    isSortable: true,
-                    items: [
-                        new L.Control.gmxIcon({
-                            id: 'cadastreInfo',
-                            togglable: true,
-                            title: 'Информация об участке'
-                        }).on('statechange', function (ev) {
-                            infoClickSelected = ev.target.options.isActive;
-                            if (infoClickSelected) {
-                                layerWMS.enableInfoMode();
-                            } else {
-                                layerWMS.disableInfoMode();
-                            }
-                        })
-                        ,
-                        new L.Control.gmxIcon({
-                            id: 'cadastreDx',
-                            togglable: true,
-                            title: 'Смещение карты'
-                        }).on('statechange', function (ev) {
-                            cadastreDxSelected = ev.target.options.isActive;
-                            if (cadastreDxSelected) {
-                                layerWMS.enableDrag();
-                            } else {
-                                layerWMS.disableDrag();
-                            }
-                        })
-                    ]
-                });
-            }
             var chkThematicLayers = function () {
                 var zoom = lmap.getZoom();
                 thematicLayers.map(function (it) {
@@ -259,9 +226,50 @@
                 .on('layeradd', function (ev) {
                     if (ev.layer === layerWMS) {
                         layerWMS.redraw();
+                        var addTools = !cadastreToolsGroup;
+                        if (gParams.showToolbar && addTools) {
+                            cadastreToolsGroup = new L.Control.gmxIconGroup({
+                                singleSelection: true,
+                                isSortable: true,
+                                items: [
+                                    new L.Control.gmxIcon({
+                                        id: 'cadastreInfo',
+                                        togglable: true,
+                                        title: 'Информация об участке'
+                                    }).on('statechange', function (ev) {
+                                        infoClickSelected = ev.target.options.isActive;
+                                        if (infoClickSelected) {
+                                            layerWMS.enableInfoMode();
+                                        } else {
+                                            layerWMS.disableInfoMode();
+                                        }
+                                    })
+                                    ,
+                                    new L.Control.gmxIcon({
+                                        id: 'cadastreDx',
+                                        togglable: true,
+                                        title: 'Смещение карты'
+                                    }).on('statechange', function (ev) {
+                                        cadastreDxSelected = ev.target.options.isActive;
+                                        if (cadastreDxSelected) {
+                                            layerWMS.enableDrag();
+                                        } else {
+                                            layerWMS.disableDrag();
+                                        }
+                                    })
+                                ]
+                            });
+                            if (layerWMS.options.infoMode) {
+                                cadastreToolsGroup.on('controladd', function (ev) {
+                                    cadastreToolsGroup.setActiveIcon(cadastreToolsGroup.getIconById('cadastreInfo'), true);
+                                });
+                            
+                            }
+                        }
                         if (cadastreToolsGroup) {
                             cadastreToolsGroup.addTo(lmap);
                         }
+                        
                         var container = null;
                         if (cadastreMenu) {
                             var alreadyLoaded = cadastreMenu.createWorkCanvas('cadastre', {
