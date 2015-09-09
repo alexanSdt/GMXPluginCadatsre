@@ -1,4 +1,9 @@
 ﻿(function () {
+    
+    "use strict";
+    
+    var gParams, inputCadNum;
+    
     _translationsHash.addtext("rus", {
         cadastrePlugin: {
             doSearch: 'Найти'
@@ -74,7 +79,7 @@
     var Thematic = function (container) {
         var cadastreLegend;
 
-        fnRefreshMap = function () {
+        var fnRefreshMap = function () {
             $("#alert").hide();
 
             $(cadastreLegend).toggle(!rbNo.checked);
@@ -237,7 +242,7 @@
                                         togglable: true,
                                         title: 'Информация об участке'
                                     }).on('statechange', function (ev) {
-                                        infoClickSelected = ev.target.options.isActive;
+                                        var infoClickSelected = ev.target.options.isActive;
                                         if (infoClickSelected) {
                                             layerWMS.enableInfoMode();
                                         } else {
@@ -250,7 +255,7 @@
                                         togglable: true,
                                         title: 'Смещение карты'
                                     }).on('statechange', function (ev) {
-                                        cadastreDxSelected = ev.target.options.isActive;
+                                        var cadastreDxSelected = ev.target.options.isActive;
                                         if (cadastreDxSelected) {
                                             layerWMS.enableDrag();
                                         } else {
