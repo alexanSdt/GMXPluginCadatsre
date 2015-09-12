@@ -180,7 +180,7 @@
                 gmxLayers = lmap.gmxControlsManager.get('layers');
             }
             
-            var options = {};
+            var options = { zIndex: 3000000 };
             if (gParams.dx || gParams.dy) {
                 options.shiftPosition = L.point(Number(gParams.dx || 0), Number(gParams.dy || 0));
             }

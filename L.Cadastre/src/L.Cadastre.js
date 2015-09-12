@@ -181,6 +181,7 @@
             if (this.info) {
                 this.info.overlays.clearAll(true);
             }
+            this.disableInfoMode();
             L.TileLayer.WMS.prototype.onRemove.call(this, map);
         },
 
