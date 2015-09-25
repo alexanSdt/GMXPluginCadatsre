@@ -380,30 +380,30 @@
 
     function buildInfoWindowTitle(objectType, feature) {
         if (objectType === CadastreTypes.okrug) {
-                return OBJECT_TYPE_FULL_NAMES[0] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
+            return OBJECT_TYPE_FULL_NAMES[0] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
         } else if (objectType === CadastreTypes.rayon) {
-                return OBJECT_TYPE_FULL_NAMES[1] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
+            return OBJECT_TYPE_FULL_NAMES[1] + ': ' + feature.attributes[FIELDS.cadastreNumber] + ' - ' + feature.attributes[FIELDS.name];
         } else if (objectType === CadastreTypes.kvartal) {
-                return OBJECT_TYPE_FULL_NAMES[2] + ': ' + feature.attributes[FIELDS.cadastreNumber];
+            return OBJECT_TYPE_FULL_NAMES[2] + ': ' + feature.attributes[FIELDS.cadastreNumber];
         } else if (objectType === CadastreTypes.parcel) {
-                return OBJECT_TYPE_FULL_NAMES[3] + ': ' + feature.attributes["PARCEL_CN"];
+            return OBJECT_TYPE_FULL_NAMES[3] + ': ' + feature.attributes["PARCEL_CN"];
         } else if (objectType === CadastreTypes.oks) {
-                var oksType = OKS_TYPES[feature.attributes[FIELDS.oksType]] ? ' (' + OKS_TYPES[feature.attributes[FIELDS.oksType]] + ')' : '';
-                return OBJECT_TYPE_FULL_NAMES[4] + oksType + ': ' + feature.attributes["PARCEL_CN"];
+            var oksType = OKS_TYPES[feature.attributes[FIELDS.oksType]] ? ' (' + OKS_TYPES[feature.attributes[FIELDS.oksType]] + ')' : '';
+            return OBJECT_TYPE_FULL_NAMES[4] + oksType + ': ' + feature.attributes["PARCEL_CN"];
         }
     };
 
     function buildInfoWindowContent(objectType, feature) {
         if (objectType === CadastreTypes.okrug) {
-                return buildCadastreInfoWindowContent(feature);
+            return buildCadastreInfoWindowContent(feature);
         } else if (objectType === CadastreTypes.rayon) {
-                return buildCadastreInfoWindowContent(feature);
+            return buildCadastreInfoWindowContent(feature);
         } else if (objectType === CadastreTypes.kvartal) {
-                return buildCadastreInfoWindowContent(feature);
+            return buildCadastreInfoWindowContent(feature);
         } else if (objectType === CadastreTypes.parcel) {
-                return buildParcelInfoWindowContent(feature);
+            return buildParcelInfoWindowContent(feature);
         } else if (objectType === CadastreTypes.oks) {
-                return buildOksInfoWindowContent(feature);
+            return buildOksInfoWindowContent(feature);
         }
     };
 
@@ -488,9 +488,9 @@
     };
 
     function searchOkrugDate(okrugNumber) {
-        var par = utils.getRequestParams('okrug', CadastreTypes.okrug, {where: FIELDS.cadastreOkrugId + " like '" + okrugNumber + "%'"});
+        var par = utils.getRequestParams('okrug', CadastreTypes.okrug, { where: FIELDS.cadastreOkrugId + " like '" + okrugNumber + "%'" });
         L.gmxUtil.requestJSONP(par.url, par.params, par.options
-        ).then(function(featureSet) {
+        ).then(function (featureSet) {
             // var attrDate = null;
             // var borderDate = null;
             var attrContent,
@@ -588,7 +588,7 @@
 
         if (feature.clickedPoint || feature.point) {
             // if (!silent) {
-                // searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
+            // searchZone((feature.clickedPoint) ? (feature.clickedPoint) : (feature.point));
             // }
         }
         else {
@@ -708,7 +708,7 @@
         if (silent) {
             currentFeature.properties.utilizationDoc = utilizationDoc;
         }
- 
+
         content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoTableFooter;
         content += INFO_WINDOW_CONTENT_TEMPLATE.mapInfoContainerFooter;
 
@@ -871,7 +871,7 @@
         if (feature.layerId) {
             objectType.layerId = feature.layerId;
         }
-        
+
         return objectType;
     };
 
@@ -969,25 +969,25 @@
         }
         return ret;
     };
-    
+
     // var fnRefreshMap = null;
 
     // var test = function (value) {
-        // if (value == null || value == "Null")
-            // value = "";
-        // return value;
+    // if (value == null || value == "Null")
+    // value = "";
+    // return value;
     // };
 
     // var parseDate = function (milliseconds) {
-        // var parseString = "";
-        // var date = new Date(milliseconds);
-        // if (date) {
-            // var theyear = date.getFullYear();
-            // var themonth = date.getMonth() + 1;
-            // var thetoday = date.getDate();
-            // parseString = thetoday + "." + themonth + "." + theyear;
-        // }
-        // return parseString;
+    // var parseString = "";
+    // var date = new Date(milliseconds);
+    // if (date) {
+    // var theyear = date.getFullYear();
+    // var themonth = date.getMonth() + 1;
+    // var thetoday = date.getDate();
+    // parseString = thetoday + "." + themonth + "." + theyear;
+    // }
+    // return parseString;
     // }
     function getObjectIdField(objectType) {
         switch (objectType) {
@@ -1136,7 +1136,13 @@
         //******************************************************************************************************************************
         var cadastreNumber = featureSet.features[0].attributes.CAD_NUM
         if (silent) {
-            currentFeature.properties.KN = cadastreNumber;
+            if (currentFeature.properties.KN)
+                if (currentFeature.properties.KN != cadastreNumber) {
+                    currentFeature.properties.status = "проверить вручную";
+                    currentFeature.properties.KN_REAL = cadastreNumber;
+                } else {
+                    currentFeature.properties.KN = cadastreNumber;
+                }
         }
         //******************************************************************************************************************************
 
@@ -1173,7 +1179,7 @@
 
         var par = utils.getRequestParams('other', objectType, query);
         L.gmxUtil.requestJSONP(par.url, par.params, par.options
-        ).then(function(featureSet) {
+        ).then(function (featureSet) {
             showInfoWindow(objectType, featureSet);
         }, function () {
             requestError();
@@ -1181,9 +1187,9 @@
     };
 
     function searchObject(objectType, whereClause) {
-        var par = utils.getRequestParams('searchObject', objectType, {where: whereClause});
+        var par = utils.getRequestParams('searchObject', objectType, { where: whereClause });
         L.gmxUtil.requestJSONP(par.url, par.params, par.options
-        ).then(function(featureSet) {
+        ).then(function (featureSet) {
             showInfoWindow(objectType, featureSet);
         }, function () {
             requestError();
@@ -1200,14 +1206,19 @@
         }
     };
 
-    var prepareContent = function (latlng) {
+    var prepareContent = function (latlng, searchPoints) {
         info.popup
             .setLatLng(latlng)
             .fire('loaderstart');
-        
-        var par = utils.getRequestParams('identify', info.layer, {latlng: latlng});
+
+        var par = utils.getRequestParams('identify', info.layer, { latlng: latlng });
+        if (searchPoints) {
+            var point = utils.getShiftPointMercator(latlng, info.layer.getShift());
+            //ставлю нулевой экстент для поиска
+            par.params.mapExtent = "{xmin:" + point.x + ",ymin:" + point.y + ",xmax:" + point.x + ",ymax" + point.y + ",spatialReference:{wkid:102100}}";
+        }
         L.gmxUtil.requestJSONP(par.url, par.params, par.options
-        ).then(function(data) {
+        ).then(function (data) {
             if (data && data.results && data.results.length > 0) {
 
                 var featureSet = [],
@@ -1260,16 +1271,38 @@
     };
 
     var currentFeature = null;
+
+    //глобальная функция 
+    window.createInfo = function (feature) {
+        currentFeature = feature;
+        currentFeature.properties.category = "";
+        currentFeature.properties.utilization = "";
+        currentFeature.properties.utilizationDoc = "";
+        currentFeature.properties.status = "";
+
+        var x = feature.geometry.coordinates[0],
+            y = feature.geometry.coordinates[1];
+
+        var extent = { minX: x, minY: y, maxX: x, maxY: y };
+
+        //createBalloonInfo(x, y, extent, "");
+        prepareContent(L.latLng(y, x), true);
+    };
+
+    window.setSilent = function (s) {
+        silent = s;
+    };
+
     var counter = 0;
     var pendingsQueue = [];
 
-    // function queue(feature) {
-        // if (counter >= 1) {
-            // pendingsQueue.push(feature);
-        // } else {
-            // exec(feature);
-        // }
-    // };
+    function queue(feature) {
+        if (counter >= 1) {
+            pendingsQueue.push(feature);
+        } else {
+            exec(feature);
+        }
+    };
 
     function exec(feature) {
         counter++;
@@ -1287,6 +1320,16 @@
         while (pendingsQueue.length) {
             return pendingsQueue.shift();
         }
+    };
+
+    window.loadPoints = function (url) {
+        window.setSilent(true);
+        $.getJSON(url, function (obj) {
+            window.points = obj;
+            for (var i = 0; i < obj.features.length; i++) {
+                queue(obj.features[i]);
+            }
+        });
     };
 
     var checkCadastreNumber = function (searchedText) {
@@ -1343,9 +1386,9 @@
 
                 searchValue = normalizeSearchCadastreNumber(value);
 
-                var par = utils.getRequestParams('cadastreSearch', cadType, {cadNum: value});
+                var par = utils.getRequestParams('cadastreSearch', cadType, { cadNum: value });
                 L.gmxUtil.requestJSONP(par.url, par.params, par.options
-                ).then(function(data) {
+                ).then(function (data) {
                     info.popup.fire('loaderend');
 
                     if (data.features.length == 0) {
@@ -1364,9 +1407,9 @@
 
                 var cadastreNumber = normalizeSearchCadastreNumber(value);
 
-                var par = utils.getRequestParams('cadastreSearch1', cadType, {where: cadType.fieldId + " like '" + cadastreNumber + "%'"});
+                var par = utils.getRequestParams('cadastreSearch1', cadType, { where: cadType.fieldId + " like '" + cadastreNumber + "%'" });
                 L.gmxUtil.requestJSONP(par.url, par.params, par.options
-                ).then(function(data) {
+                ).then(function (data) {
                     info.popup.fire('loaderend');
                     info.removePopup();
 
@@ -1375,7 +1418,7 @@
                         return;
                     }
                     var featureExtent = utils.getFeatureExtent(data.features[0].attributes);
-                    lmap.fitBounds(featureExtent.latLngBounds, {animate: false});
+                    lmap.fitBounds(featureExtent.latLngBounds, { animate: false });
 
                     showInfoWindow(cadType, data);
 
@@ -1385,7 +1428,7 @@
             }
         }
     };
-    window.parentCadastreNumberClick = function(arg) {
+    window.parentCadastreNumberClick = function (arg) {
         //console.log('parentCadastreNumberClick', arg );
         cadastreSearch(arg);
     };
@@ -1410,17 +1453,17 @@
             arr: []
         },
 
-        clearAll: function() {
+        clearAll: function () {
             this.clear(true, 'infoOverlay');
             this.clear(true, 'thematicOverlay');
         },
 
-        clear: function(allFlag, type) {
+        clear: function (allFlag, type) {
             var lmap = info.layer._map,
                 key = type || 'infoOverlay',
                 data = overlays[key],
                 len = data.arr.length - (allFlag ? 0 : 1);
-                
+
             for (var i = 0; i < len; i++) {
                 data.arr.shift().onRemove(lmap);
             }
@@ -1429,7 +1472,7 @@
             }
         },
 
-        setOverlay: function(type, attr) {
+        setOverlay: function (type, attr) {
             if (!attr) {
                 if (!overlays[type].lastAttr) {
                     return;
@@ -1461,7 +1504,7 @@
             var mapExtent = utils.getMapExtent(info.layer),
                 layerId = attr.layerId,
                 zIndex = info.layer.options.zIndex - 2;
-                
+
             var params = L.Util.extend(overlays.params, {
                 layers: 'show:' + layerId,
                 size: mapExtent.size,
@@ -1483,7 +1526,7 @@
             }
 
             overlays[type].arr.push(new L.ImageOverlay.Pane(imageUrl, lmap.getBounds())
-                .on('load', function() {
+                .on('load', function () {
                     overlays.clear(false, type);
                     info.popup.fire('loaderend');
                 })
@@ -1492,15 +1535,15 @@
             );
         },
 
-        setThematicOverlay: function(attr) {
+        setThematicOverlay: function (attr) {
             overlays.setOverlay('thematicOverlay', attr);
         },
 
-        setImageOverlay: function(attr) {
+        setImageOverlay: function (attr) {
             overlays.setOverlay('infoOverlay', attr);
         },
 
-        refresh: function() {
+        refresh: function () {
             if (overlays.infoOverlay.arr.length) {
                 overlays.setOverlay('infoOverlay');
             }
@@ -1512,7 +1555,7 @@
 
     var cadastreServer = 'http://maps.rosreestr.ru/arcgis/rest/services/';
     var utils = {
-        getRequestParams: function(type, layer, extend) {
+        getRequestParams: function (type, layer, extend) {
             var out = {
                 options: { callbackParamName: 'callback' }
             };
@@ -1572,7 +1615,7 @@
             return out;
         },
 
-        getMapExtent: function(cadastreLayer) {
+        getMapExtent: function (cadastreLayer) {
             var lmap = cadastreLayer._map,
                 shiftPosition = cadastreLayer.getShift(),
                 mInPixel = 256 / L.gmxUtil.tileSizes[lmap.getZoom()],
@@ -1599,20 +1642,20 @@
             };
         },
 
-        getShiftPointMercator: function(latlng, shiftPosition) {
+        getShiftPointMercator: function (latlng, shiftPosition) {
             return L.CRS.EPSG3857.project(latlng).subtract(shiftPosition);
         },
 
-        getShiftPointLatlng: function(latlng) {
+        getShiftPointLatlng: function (latlng) {
             var mPoint = getShiftPointMercator(latlng),
                 crs = L.Projection.SphericalMercator;
             return crs.unproject(mPoint.divideBy(6378137));
         },
 
-        getFeatureExtent: function(attr) {
+        getFeatureExtent: function (attr) {
             var R = 6378137,
                 crs = L.Projection.SphericalMercator;
-            
+
             return {
                 latlng: crs.unproject(L.point(attr.XC, attr.YC).divideBy(R)),
                 latLngBounds: L.latLngBounds(
@@ -1632,20 +1675,20 @@
             }
         },
 
-        popup: L.popup({minWidth: 400}),
+        popup: L.popup({ minWidth: 400 }),
 
-        closePopup: function() {
+        closePopup: function () {
             overlays.clear(true);
         },
 
-        removePopup: function() {
+        removePopup: function () {
             overlays.clear(true);
             if (this._map) {
                 this._map.removeLayer(info.popup);
             }
         },
 
-        setPopup: function(ev) {
+        setPopup: function (ev) {
             if (!info.layer._dragstate) {
                 if (!ev.originalEvent || !ev.originalEvent.ctrlKey) {
                     info.popup.setLatLng(ev.latlng);
@@ -1662,7 +1705,7 @@
             click: info.setPopup,
             removePopup: info.removePopup,
             cadastreSearch: cadastreSearch,
-            init: function(layer) {
+            init: function (layer) {
                 info.layer = layer;
             }
         }
