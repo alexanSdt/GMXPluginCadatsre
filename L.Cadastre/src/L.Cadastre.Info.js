@@ -1124,7 +1124,7 @@
 
         var popup = info.popup,
             lmap = info.layer._map;
-        var popup = info.popup;
+
         if (!silent) {
             if (!ctrlKey) popup.openOn(lmap);
         } else {
@@ -1328,14 +1328,24 @@
     var searchValue = null;
     var findFeature = null;
 
+    var myAlert = function () {
+        if ($ && $("#alert")) {
+            // $("#alert").append('Ошибка получения данных!');
+            $("#alert").show(true);
+        } else {
+            alert("Не найдено.");
+        }
+    };
+    
     var cadastreSearch = function (value) {
 
         value = value.trim();
 
-        if (checkCadastreNumber(value)) {
+        var lmap = info.layer._map;
+        $("#alert").hide();
+        if (lmap && checkCadastreNumber(value)) {
 
-            var cadType = getCadastreType(value),
-                lmap = info.layer._map;
+            var cadType = getCadastreType(value);
 
             info.popup.fire('loaderstart');
 
@@ -1348,8 +1358,8 @@
                 ).then(function(data) {
                     info.popup.fire('loaderend');
 
-                    if (data.features.length == 0) {
-                        alert("Не найдено.");
+                    if (!data.features || data.features.length == 0) {
+                        myAlert();
                         return;
                     }
                     findFeature = data.features[0];
@@ -1370,19 +1380,22 @@
                     info.popup.fire('loaderend');
                     info.removePopup();
 
-                    if (data.features.length == 0) {
-                        alert("Не найдено.");
+                    if (!data.features || data.features.length == 0) {
+                        myAlert();
                         return;
                     }
                     var featureExtent = utils.getFeatureExtent(data.features[0].attributes);
                     lmap.fitBounds(featureExtent.latLngBounds, {animate: false});
 
+                    info.popup.setLatLng(featureExtent.latlng);
                     showInfoWindow(cadType, data);
 
                 }, function () {
                     info.popup.fire('loaderend');
                 });
             }
+        } else {
+            myAlert();
         }
     };
     window.parentCadastreNumberClick = function(arg) {

@@ -4,13 +4,16 @@
     
     var gParams, inputCadNum;
     
+
     _translationsHash.addtext("rus", {
+        '$$search$$_Cadastre' : "кадастровому номеру",
         cadastrePlugin: {
             doSearch: 'Найти'
         }
     });
 
     _translationsHash.addtext("eng", {
+       '$$search$$_Cadastre' : "cadastral number",
         cadastrePlugin: {
             doSearch: 'Search'
         }
@@ -225,6 +228,26 @@
                 });
                 layerWMS.info.overlays.refresh();
             };
+            var toogleSearchString = function (flag) {
+                var searchControl = 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null,
+                    searchHook = function(str) {
+                        if (/[^\d\:]/g.exec(str)) { return false; }
+                        layerWMS.info.cadastreSearch(str);                        
+                        return true;
+                    };
+                if (searchControl) {
+                    var str = 'Поиск по ';
+                    if (flag) {
+                        searchControl.addSearchByStringHook(searchHook, 1001);
+                        str += _gtxt('$$search$$_Cadastre') + ', ';
+                    } else {
+                        searchControl.removeSearchByStringHook(searchHook);
+                        
+                    }
+                    str += 'векторным слоям и адресной базе';
+                    searchControl.SetPlaceholder(str);
+                }
+            };
 
             var cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null;
             lmap
@@ -292,6 +315,7 @@
 
                         thematic = new Thematic(container);
                         chkThematicLayers();
+                        toogleSearchString(true);
                     }
                 })
                 .on('layerremove', function (ev) {
@@ -308,6 +332,7 @@
                         if (inputCadNum) {
                             inputCadNum.value = '66:41:0402004:16';
                         }
+                        toogleSearchString(false);
                     }
                 })
                 .on('moveend', chkThematicLayers);
