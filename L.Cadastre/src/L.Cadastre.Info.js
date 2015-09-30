@@ -1342,7 +1342,9 @@
         value = value.trim();
 
         var lmap = info.layer._map;
-        $("#alert").hide();
+        if ($ && $("#alert")) {
+            $("#alert").hide();
+        }
         if (lmap && checkCadastreNumber(value)) {
 
             var cadType = getCadastreType(value);
