@@ -1328,12 +1328,15 @@
     var searchValue = null;
     var findFeature = null;
 
-    var myAlert = function () {
+    var myAlert = function (data) {
         if ($ && $("#alert")) {
-            // $("#alert").append('Ошибка получения данных!');
             $("#alert").show(true);
         } else {
-            alert("Не найдено.");
+            if (nsGmx && nsGmx.widgets && nsGmx.widgets.notifications) {
+                nsGmx.widgets.notifications.stopAction('L.Cadatsre.Info', 'error','Ошибка получения данных!');
+            }
+            //info.layer.fire('errorloading', {data: data});
+            //alert("Не найдено.");
         }
     };
     
@@ -1361,7 +1364,7 @@
                     info.popup.fire('loaderend');
 
                     if (!data.features || data.features.length == 0) {
-                        myAlert();
+                        myAlert(data);
                         return;
                     }
                     findFeature = data.features[0];
@@ -1383,7 +1386,7 @@
                     info.removePopup();
 
                     if (!data.features || data.features.length == 0) {
-                        myAlert();
+                        myAlert(data);
                         return;
                     }
                     var featureExtent = utils.getFeatureExtent(data.features[0].attributes);
@@ -1397,7 +1400,7 @@
                 });
             }
         } else {
-            myAlert();
+            myAlert(value);
         }
     };
     window.parentCadastreNumberClick = function(arg) {
@@ -1655,8 +1658,8 @@
 
         removePopup: function() {
             overlays.clear(true);
-            if (this._map) {
-                this._map.removeLayer(info.popup);
+            if (info.popup._map) {
+                info.popup._map.removeLayer(info.popup);
             }
         },
 

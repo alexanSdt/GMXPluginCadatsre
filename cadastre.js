@@ -6,21 +6,26 @@
     
 
     _translationsHash.addtext("rus", {
-        '$$search$$_Cadastre' : "кадастровому номеру",
+        '$$search$$_Cadastre_0' : 'Поиск по векторным слоям и адресной базе',
+        '$$search$$_Cadastre_1' : 'Поиск по кадастровому номеру, векторным слоям и адресной базе',
         cadastrePlugin: {
+            name: 'Кадастр Росреестра',
             doSearch: 'Найти'
         }
     });
 
     _translationsHash.addtext("eng", {
-       '$$search$$_Cadastre' : "cadastral number",
+        '$$search$$_Cadastre_0' : 'Search for vector layers and address database',
+        '$$search$$_Cadastre_1' : 'Search for cadastre number, vector layers and address database',
         cadastrePlugin: {
+            name: 'Cadastre',
             doSearch: 'Search'
         }
     });
 
     var lmap, layerWMS,
         thematic,
+        searchControl,
         dialog;
 
     var b = [
@@ -108,8 +113,16 @@
         var div = _div(null, [['dir', 'className', 'cadastreLeftMenuContainer']]);
         var trs = [];
 
-        trs.push(_tr([_td([_span([_t("Поиск по кадастровому номеру")], [['dir', 'className', 'cadastreLeftMenuLabel']])], [['attr', 'colspan', 2]])]));
-
+        trs.push(_tr([_td([_span([_t("Введите кадастровый номер в строку поиска,")], [['dir', 'className', 'cadastreLeftMenuLabel']])], [['attr', 'colspan', 2]])]));
+        var exampleStr = '66:41:0402004:16',
+            numExample = _span([_t(exampleStr)], [['dir', 'className', 'cadastreLeftMenuLabel1']]);
+        numExample.onclick = function () {
+            if (searchControl) {
+                searchControl.SetSearchString(exampleStr);
+            }
+        };
+        trs.push(_tr([_td([_span([_t("например: ")], [['dir', 'className', 'cadastreLeftMenuLabel']]), numExample], [['attr', 'colspan', 2]])]));
+/*
         var inputField = inputCadNum = _input(null, [['dir', 'className', 'inputStyle'], ['css', 'width', '200px'], ['attr', 'value', '66:41:0402004:16']]);
 
         inputField.onkeydown = function (e) {
@@ -125,6 +138,7 @@
         goButton.onclick = function () { layerWMS.info.cadastreSearch(inputField.value); }
 
         trs.push(_tr([_td([inputField], [['attr', 'colspan', 2]]), _td([goButton])]));
+*/        
         trs.push(_tr([_td([], [['attr', 'height', 15]])]));
 
         // cbDivision = _checkbox(true, 'checkbox');
@@ -153,7 +167,7 @@
 
         this.unload = function () {
             layerWMS.info.overlays.clear(true, 'thematicOverlay');
-            inputCadNum.value = '66:41:0402004:16';
+            // inputCadNum.value = '66:41:0402004:16';
         }
 
         this.load = function () {
@@ -188,7 +202,7 @@
                 options.shiftPosition = L.point(Number(gParams.dx || 0), Number(gParams.dy || 0));
             }
             layerWMS = new L.Cadastre(null, options);
-            gmxLayers.addOverlay(layerWMS, 'Кадастр Росреестра');
+            gmxLayers.addOverlay(layerWMS, _gtxt('cadastrePlugin.name'));
 
             layerWMS
                 .on('dragenabled', function () {
@@ -228,26 +242,47 @@
                 });
                 layerWMS.info.overlays.refresh();
             };
-            var toogleSearchString = function (flag) {
-                var searchControl = 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null,
-                    searchHook = function(str) {
-                        if (/[^\d\:]/g.exec(str)) { return false; }
-                        layerWMS.info.cadastreSearch(str);                        
-                        return true;
-                    };
-                if (searchControl) {
-                    var str = 'Поиск по ';
-                    if (flag) {
-                        searchControl.addSearchByStringHook(searchHook, 1001);
-                        str += _gtxt('$$search$$_Cadastre') + ', ';
-                    } else {
-                        searchControl.removeSearchByStringHook(searchHook);
-                        
+            var regExpArr = [
+                /[^\d\:]/g,
+                /\d\d:\d+$/,
+                /\d\d:\d+:\d+$/,
+                /\d\d:\d+:\d+:\d+$/
+            ];
+            var isValidCadastreNum = function (str) {
+                if (!regExpArr[0].exec(str)) {
+                    for (var i = 1, len = regExpArr.length; i < len; i++) {
+                        if (regExpArr[i].exec(str)) { return true; }
                     }
-                    str += 'векторным слоям и адресной базе';
+                }
+                return false;
+            };
+            var toogleSearchString = function (flag) {
+                var flagSetHook = !searchControl;
+                searchControl = 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null;
+                var searchHook = function(str) {
+                    str = str.trim();
+                    if (!isValidCadastreNum(str)) { return false; }
+                    if (!layerWMS._map) {
+                        lmap.addLayer(layerWMS);
+                    }
+                    layerWMS.info.cadastreSearch(str);                        
+                    return true;
+                };
+                if (searchControl && flagSetHook) {
+                    searchControl.addSearchByStringHook(searchHook, 1001);
+                    var str = _gtxt('$$search$$_Cadastre_1');
+                    // var str = '';
+                    // if (flag) {
+                        // searchControl.addSearchByStringHook(searchHook, 1001);
+                        // str = _gtxt('$$search$$_Cadastre_1');
+                    // } else {
+                        // searchControl.removeSearchByStringHook(searchHook);
+                        // str = _gtxt('$$search$$_Cadastre_0');
+                    // }
                     searchControl.SetPlaceholder(str);
                 }
             };
+            toogleSearchString(true);
 
             var cadastreMenu = gParams.showLeftPanel ? new leftMenu() : null;
             lmap
@@ -329,9 +364,10 @@
                         if (cadastreMenu) {
                             $(cadastreMenu.parentWorkCanvas).remove();
                         }
-                        if (inputCadNum) {
-                            inputCadNum.value = '66:41:0402004:16';
-                        }
+                        // if (inputCadNum) {
+                            // inputCadNum.value = '66:41:0402004:16';
+                        // }
+                        layerWMS.info.removePopup(true);
                         toogleSearchString(false);
                     }
                 })
