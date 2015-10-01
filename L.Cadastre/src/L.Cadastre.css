@@ -31,3 +31,9 @@
 .cadastreLegendImageColumn {
     width: 20px
 }
+.leaflet-cadastre-infoDisabled {
+    pointer-events: none;
+}
+.leaflet-clickable-raster-layer {
+    cursor: help;
+}
