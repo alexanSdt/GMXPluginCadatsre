@@ -37,3 +37,6 @@
 .leaflet-clickable-raster-layer {
     cursor: help;
 }
+.cadastreLeftMenuRow {
+    height: 17px;
+}

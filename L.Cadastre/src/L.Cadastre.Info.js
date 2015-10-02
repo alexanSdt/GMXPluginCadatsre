@@ -1335,9 +1335,8 @@
             if (nsGmx && nsGmx.widgets && nsGmx.widgets.notifications) {
                 nsGmx.widgets.notifications.stopAction('L.Cadatsre.Info', 'error','Ошибка получения данных!');
             }
-            //info.layer.fire('errorloading', {data: data});
-            //alert("Не найдено.");
         }
+        info.layer.fire('errorloading', {data: data});
     };
     
     var cadastreSearch = function (value) {
