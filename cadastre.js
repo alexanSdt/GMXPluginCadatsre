@@ -6,8 +6,8 @@
     
 
     _translationsHash.addtext("rus", {
-        '$$search$$_Cadastre_0' : 'Поиск по векторным слоям и адресной базе',
-        '$$search$$_Cadastre_1' : 'Поиск по адресам, координатам, кадастровым номерам',
+        '$$search$$_Cadastre_0' : 'Поиск по адресам, координатам.',
+        '$$search$$_Cadastre_1' : 'Поиск по адресам, координатам, кадастровым номерам.',
         cadastrePlugin: {
             name: 'Кадастр Росреестра',
             doSearch: 'Найти'
@@ -15,8 +15,8 @@
     });
 
     _translationsHash.addtext("eng", {
-        '$$search$$_Cadastre_0' : 'Search for vector layers and address database',
-        '$$search$$_Cadastre_1' : 'Search for cadastre number, vector layers and address database',
+        '$$search$$_Cadastre_0' : 'Search by addresses, coordinates.',
+        '$$search$$_Cadastre_1' : 'Search by addresses, coordinates, cadastre number.',
         cadastrePlugin: {
             name: 'Cadastre',
             doSearch: 'Search'
