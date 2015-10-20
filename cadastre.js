@@ -332,6 +332,7 @@
                         }
                         if (cadastreToolsGroup) {
                             cadastreToolsGroup.addTo(lmap);
+                            cadastreToolsGroup.getIconById('cadastreDx').setActive(false, true);
                         }
                         
                         var container = null;

@@ -85,6 +85,17 @@
             L.DomUtil.setPosition(this._tileContainer, this._pos);
         },
 
+        _dragstart: function () {
+            this.fire('dragstart');
+            this._dragstate = true;
+        },
+
+        _dragend: function () {
+            this.fire('dragend');
+            var _this = this;
+            setTimeout(function () { _this._dragstate = false; }, 0);
+        },
+
         _drag: function (ev) {
             this._pixelPoint = ev.target._newPos;
 
@@ -109,20 +120,11 @@
                 L.DomUtil.disableImageDrag();
                 map.on('zoomstart', this.redraw, this);
                 L.DomUtil.setPosition(this._tileContainer, L.point(0, 0));
-                if (!this._draggable) {
-                    var _this = this;
-                    this._draggable = new L.Draggable(this._tileContainer, this._container);
-                    this._draggable
-                        .on('dragstart', function () {
-                            this.fire('dragstart');
-                            this._dragstate = true;
-                        }, this)
-                        .on('dragend', function () {
-                            this.fire('dragend');
-                            setTimeout(function () { _this._dragstate = false; }, 0);
-                        }, this)
-                        .on('drag', this._drag, this);
-                }
+                this._draggable = new L.Draggable(this._tileContainer, this._container);
+                this._draggable
+                    .on('dragstart', this._dragstart, this)
+                    .on('dragend', this._dragend, this)
+                    .on('drag', this._drag, this);
                 this._draggable.enable();
             }
             this.fire('dragenabled');
@@ -152,6 +154,15 @@
                 L.DomUtil.enableImageDrag();
                 map.off('zoomstart', this.redraw, this);
                 this._draggable.disable();
+                this._draggable
+                    .off('dragstart', this._dragstart, this)
+                    .off('dragend', this._dragend, this)
+                    .off('drag', this._drag, this);
+
+                if (this._dragstate) {
+                    this.fire('dragend');
+                    this._dragstate = false;
+                }
                 this.redraw();
             }
             this.fire('dragdisabled');
@@ -177,7 +188,7 @@
                 .off('tileloadstart', this._tileloadstart, this)
                 .off('tileload tileunload', this._tileloadend, this);
 
-            //map.off('click', this._click, this);
+            this.disableDrag();
             if (this.info) {
                 this.info.overlays.clearAll(true);
             }
