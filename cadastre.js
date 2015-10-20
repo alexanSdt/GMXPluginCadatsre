@@ -213,6 +213,9 @@
                         var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
                         dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
                             dialog = null;
+                            if (cadastreToolsGroup) {
+                                cadastreToolsGroup.setActiveIcon();
+                            }
                         });
                     }
                 })
