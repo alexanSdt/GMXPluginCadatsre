@@ -202,34 +202,46 @@
             if (gParams.dx || gParams.dy) {
                 options.shiftPosition = L.point(Number(gParams.dx || 0), Number(gParams.dy || 0));
             }
-            layerWMS = new L.Cadastre(null, options);
-            gmxLayers.addOverlay(layerWMS, _gtxt('cadastrePlugin.name'));
+            var layerGroup = L.layerGroup();
+            gmxLayers.addOverlay(layerGroup, _gtxt('cadastrePlugin.name'));
 
-            layerWMS
-                .on('dragenabled', function () {
-                    thematic.unload();
-                    if (!dialog) {
-                        var point = layerWMS.getShift();
-                        var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
-                        dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
-                            dialog = null;
-                            if (cadastreToolsGroup) {
-                                cadastreToolsGroup.setActiveIcon();
+            var initWMSlayer = function () {
+                var path = publicInterface.path,
+                    pref = path + 'L.Cadastre/src/L.Cadastre',
+                    arr = [
+                        { script: pref + '.js', check: function(){ return L.Cadastre; }, css: pref + '.css' },
+                        { script: pref + '.Info.js', check: function(){ return L.Cadastre.Info; } },
+                        { script: path + '../../../leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } }
+                    ];
+                gmxCore.loadScriptWithCheck(arr).then(function () {                        
+                    layerWMS = new L.Cadastre(null, options);
+                    layerWMS
+                        .on('dragenabled', function () {
+                            thematic.unload();
+                            if (!dialog) {
+                                var point = layerWMS.getShift();
+                                var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
+                                dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
+                                    dialog = null;
+                                    if (cadastreToolsGroup) {
+                                        cadastreToolsGroup.setActiveIcon();
+                                    }
+                                });
                             }
+                        })
+                        .on('dragdisabled', function () {
+                            thematic.load();
+                            if (dialog) {
+                                $(dialog).dialog('close');
+                            }
+                        })
+                        .on('drag', function () {
+                            var point = layerWMS.getShift();
+                            $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
                         });
-                    }
-                })
-                .on('dragdisabled', function () {
-                    thematic.load();
-                    if (dialog) {
-                        $(dialog).dialog('close');
-                    }
-                })
-                .on('drag', function () {
-                    var point = layerWMS.getShift();
-                    $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
+                    layerGroup.addLayer(layerWMS);
                 });
-
+            };
             var cadastreToolsGroup;
             var chkThematicLayers = function () {
                 var zoom = lmap.getZoom();
@@ -356,6 +368,8 @@
                         thematic = new Thematic(container);
                         chkThematicLayers();
                         toogleSearchString(true);
+                    } else if (!layerWMS && ev.layer === layerGroup) {
+                        initWMSlayer();
                     }
                 })
                 .on('layerremove', function (ev) {
@@ -386,14 +400,7 @@
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
         init: function (module, path) {
-            var pref = path + 'L.Cadastre/src/L.',
-                arr = ['Cadastre', 'Cadastre.Info'].map(function(key){
-                    return { script: pref + key + '.js', check: function(){ return L[key]; } };
-                });
-
-            arr.push({ script: path + '../../../leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } });
-            return gmxCore.loadScriptWithCheck(arr);
-        },
-        css: 'L.Cadastre/src/L.Cadastre.css'
+            publicInterface.path = path;
+        }
     });
 })();
