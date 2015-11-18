@@ -386,12 +386,13 @@
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
         init: function (module, path) {
-            var pref = path + 'L.Cadastre/src/'; 
-            return $.when(
-                gmxCore.loadScript(pref + "L.ImageOverlay.Pane.js"),
-                gmxCore.loadScript(pref + "L.Cadastre.js"),
-                gmxCore.loadScript(pref + "L.Cadastre.Info.js")
-            );
+            var pref = path + 'L.Cadastre/src/L.',
+                arr = ['Cadastre', 'Cadastre.Info'].map(function(key){
+                    return { script: pref + key + '.js', check: function(){ return L[key]; } };
+                });
+
+            arr.push({ script: 'leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } });
+            return gmxCore.loadScriptWithCheck(arr);
         },
         css: 'L.Cadastre/src/L.Cadastre.css'
     });
