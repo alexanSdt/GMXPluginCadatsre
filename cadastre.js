@@ -391,7 +391,7 @@
                     return { script: pref + key + '.js', check: function(){ return L[key]; } };
                 });
 
-            arr.push({ script: 'leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } });
+            arr.push({ script: path + '../../../leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } });
             return gmxCore.loadScriptWithCheck(arr);
         },
         css: 'L.Cadastre/src/L.Cadastre.css'
