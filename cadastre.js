@@ -244,6 +244,7 @@
             };
             var cadastreToolsGroup;
             var chkThematicLayers = function () {
+                if (!layerWMS) { return; }
                 var zoom = lmap.getZoom();
                 thematicLayers.map(function (it) {
                     if (it.radio) {
@@ -273,9 +274,11 @@
                 return false;
             };
             var toogleSearchString = function (flag) {
+                if (!layerWMS) { return; }
                 var flagSetHook = !searchControl;
                 searchControl = 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null;
                 var searchHook = function(str) {
+                    if (!layerWMS) { return; }
                     str = str.trim();
                     if (!isValidCadastreNum(str)) { return false; }
                     if (!layerWMS._map) {
