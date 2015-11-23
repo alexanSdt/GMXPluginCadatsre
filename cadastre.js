@@ -210,36 +210,37 @@
                     pref = path + 'L.Cadastre/src/L.Cadastre',
                     arr = [
                         { script: pref + '.js', check: function(){ return L.Cadastre; }, css: pref + '.css' },
-                        { script: pref + '.Info.js', check: function(){ return L.Cadastre.Info; } },
-                        { script: path + '../../../leaflet/plugins/L.ImageOverlay.Pane/src/L.ImageOverlay.Pane.js', check: function(){ return L.ImageOverlay.Pane; } }
+                        { script: pref + '.Info.js', check: function(){ return L.Cadastre.Info; } }
                     ];
-                gmxCore.loadScriptWithCheck(arr).then(function () {                        
-                    layerWMS = new L.Cadastre(null, options);
-                    layerWMS
-                        .on('dragenabled', function () {
-                            thematic.unload();
-                            if (!dialog) {
+                gmxCore.loadScriptWithCheck(arr).then(function () {
+                    gmxCore.loadModule('L.ImageOverlay.Pane').then(function () {
+                        layerWMS = new L.Cadastre(null, options);
+                        layerWMS
+                            .on('dragenabled', function () {
+                                thematic.unload();
+                                if (!dialog) {
+                                    var point = layerWMS.getShift();
+                                    var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
+                                    dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
+                                        dialog = null;
+                                        if (cadastreToolsGroup) {
+                                            cadastreToolsGroup.setActiveIcon();
+                                        }
+                                    });
+                                }
+                            })
+                            .on('dragdisabled', function () {
+                                thematic.load();
+                                if (dialog) {
+                                    $(dialog).dialog('close');
+                                }
+                            })
+                            .on('drag', function () {
                                 var point = layerWMS.getShift();
-                                var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
-                                dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
-                                    dialog = null;
-                                    if (cadastreToolsGroup) {
-                                        cadastreToolsGroup.setActiveIcon();
-                                    }
-                                });
-                            }
-                        })
-                        .on('dragdisabled', function () {
-                            thematic.load();
-                            if (dialog) {
-                                $(dialog).dialog('close');
-                            }
-                        })
-                        .on('drag', function () {
-                            var point = layerWMS.getShift();
-                            $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
-                        });
-                    layerGroup.addLayer(layerWMS);
+                                $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
+                            });
+                        layerGroup.addLayer(layerWMS);
+                    });
                 });
             };
             var cadastreToolsGroup;
