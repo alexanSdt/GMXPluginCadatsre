@@ -1,4 +1,4 @@
-﻿(function () {
+﻿(function (_) {
     
     "use strict";
     
@@ -407,4 +407,4 @@
             publicInterface.path = path;
         }
     });
-})();
+})(nsGmx.Utils._);
