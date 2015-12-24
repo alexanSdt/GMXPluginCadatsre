@@ -120,7 +120,7 @@
                 L.DomUtil.disableImageDrag();
                 map.on('zoomstart', this.redraw, this);
                 L.DomUtil.setPosition(this._tileContainer, L.point(0, 0));
-                this._draggable = new L.Draggable(this._tileContainer, this._container);
+                this._draggable = new L.Draggable(this._tileContainer, map._container);
                 this._draggable
                     .on('dragstart', this._dragstart, this)
                     .on('dragend', this._dragend, this)
