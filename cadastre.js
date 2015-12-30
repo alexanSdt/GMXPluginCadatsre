@@ -1,9 +1,8 @@
-﻿(function (_) {
-    
+﻿(function () {
+
     "use strict";
-    
+
     var gParams, inputCadNum;
-    
 
     _translationsHash.addtext("rus", {
         '$$search$$_Cadastre_0' : 'Поиск по адресам, координатам',
@@ -162,9 +161,9 @@
         var alertDiv = _div(null, [['attr', 'id', "alert"]]);
         $(alertDiv).css({ "color": "red", "font-weight": "bold", "font-size": "12px", "display": "none" });
         $(alertDiv).append("Ошибка получения данных!");
-        _(div, [_table([_tbody(trs)]), cadastreLegend, alertDiv]);
+        nsGmx.Utils._(div, [_table([_tbody(trs)]), cadastreLegend, alertDiv]);
 
-        container && _(container, [div]);
+        container && nsGmx.Utils._(container, [div]);
 
         this.unload = function () {
             layerWMS.info.overlays.clear(true, 'thematicOverlay');
@@ -175,6 +174,46 @@
             fnRefreshMap();
         }
     };
+    
+    var DEFAULT_ZINDEX = 3000000;
+    var loadScripts = _.once(function() {
+        var path = gmxCore.getModulePath('cadastre') + 'L.Cadastre/src/',
+            corePluginLoader = gmxCore.loadScript(path + 'L.Cadastre.js')
+                .then(gmxCore.loadScript.bind(gmxCore, path + 'L.Cadastre.Info.js', null, null)),
+            imageOverlayLoader = gmxCore.loadModule('L.ImageOverlay.Pane');
+        
+        gmxCore.loadCSS(path + 'L.Cadastre.css');
+        return $.when(corePluginLoader, imageOverlayLoader);
+    });
+    
+    var CadastreVirtualLayer = L.LayerGroup.extend({
+        initFromDescription: function(layerDescription) {
+            this._gmxProperties = layerDescription.properties;
+            this._loadAndAddLayer = _.once(this._loadAndAddLayer);
+            return this;
+        },
+        getGmxProperties: function() {
+            return this._gmxProperties;
+        },
+        
+        _loadAndAddLayer: function() {
+            loadScripts().then(function() {
+                var cadastreLayer = new L.Cadastre(null, {
+                    zIndex: DEFAULT_ZINDEX
+                });
+                this.addLayer(cadastreLayer);
+            }.bind(this));
+        },
+        
+        onAdd: function(map) {
+            L.LayerGroup.prototype.onAdd.call(this, map);
+            this._loadAndAddLayer();
+        }
+    });
+    
+    var addLayerClass = function() {
+        L.gmx.addLayerClass('Cadastre', CadastreVirtualLayer);
+    }
 
     var publicInterface = {
         pluginName: 'Cadastre',
@@ -188,59 +227,45 @@
                 initCadastre: false
             }, params);
 
-            var gmxLayers = null;
-            if (!nsGmx.leafletMap) {    // для старого АПИ
-                gmxCore.loadScript('leaflet/plugins/Leaflet-GeoMixer/src/Deferred.js')
-                lmap = gmxAPI._leaflet.LMap;
-                gmxLayers = gmxAPI.map.controlsManager.getControl('layers');
-            } else {
-                lmap = nsGmx.leafletMap;
-                gmxLayers = lmap.gmxControlsManager.get('layers');
-            }
+            lmap = nsGmx.leafletMap;
             
-            var options = { zIndex: 3000000 };
+            var options = { zIndex: DEFAULT_ZINDEX };
             if (gParams.dx || gParams.dy) {
                 options.shiftPosition = L.point(Number(gParams.dx || 0), Number(gParams.dy || 0));
             }
+
+            var gmxLayers = lmap.gmxControlsManager.get('layers');            
             var layerGroup = L.layerGroup();
             gmxLayers.addOverlay(layerGroup, _gtxt('cadastrePlugin.name'));
 
             var initWMSlayer = function () {
-                var path = publicInterface.path,
-                    pref = path + 'L.Cadastre/src/L.Cadastre',
-                    arr = [
-                        { script: pref + '.js', check: function(){ return L.Cadastre; }, css: pref + '.css' },
-                        { script: pref + '.Info.js', check: function(){ return L.Cadastre.Info; } }
-                    ];
-                gmxCore.loadScriptWithCheck(arr).then(function () {
-                    gmxCore.loadModule('L.ImageOverlay.Pane').then(function () {
-                        layerWMS = new L.Cadastre(null, options);
-                        layerWMS
-                            .on('dragenabled', function () {
-                                thematic.unload();
-                                if (!dialog) {
-                                    var point = layerWMS.getShift();
-                                    var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
-                                    dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
-                                        dialog = null;
-                                        if (cadastreToolsGroup) {
-                                            cadastreToolsGroup.setActiveIcon();
-                                        }
-                                    });
-                                }
-                            })
-                            .on('dragdisabled', function () {
-                                thematic.load();
-                                if (dialog) {
-                                    $(dialog).dialog('close');
-                                }
-                            })
-                            .on('drag', function () {
+                loadScripts().then(function() {
+                    layerWMS = new L.Cadastre(null, options);
+                    layerWMS
+                        .on('dragenabled', function () {
+                            thematic.unload();
+                            if (!dialog) {
                                 var point = layerWMS.getShift();
-                                $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
-                            });
-                        layerGroup.addLayer(layerWMS);
-                    });
+                                var $str = $('<div id="coord">dx: ' + point.x.toFixed(2) + ';<br /> dy: ' + point.y.toFixed(2) + ';</div>');
+                                dialog = showDialog("Координаты калибровки", $str.get(0), 200, 85, false, false, null, function () {
+                                    dialog = null;
+                                    if (cadastreToolsGroup) {
+                                        cadastreToolsGroup.setActiveIcon();
+                                    }
+                                });
+                            }
+                        })
+                        .on('dragdisabled', function () {
+                            thematic.load();
+                            if (dialog) {
+                                $(dialog).dialog('close');
+                            }
+                        })
+                        .on('drag', function () {
+                            var point = layerWMS.getShift();
+                            $("#coord").html("dx: " + point.x.toFixed(2) + ";<br /> dy: " + point.y.toFixed(2) + ";");
+                        });
+                    layerGroup.addLayer(layerWMS);
                 });
             };
             var cadastreToolsGroup;
@@ -403,8 +428,8 @@
     }
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
-        init: function (module, path) {
-            publicInterface.path = path;
+        init: function() {
+            addLayerClass();
         }
     });
-})(nsGmx.Utils._);
+})();
