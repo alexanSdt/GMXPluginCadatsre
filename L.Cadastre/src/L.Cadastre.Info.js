@@ -957,7 +957,11 @@
         }
 
         while (str.length < len) {
-            str = to ? ret + _char : _char + ret;
+            if (to) {
+                str += _char;
+            } else {
+                str = _char + str;
+            }
         }
         
         return str;
