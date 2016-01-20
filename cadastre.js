@@ -177,43 +177,8 @@
     
     var DEFAULT_ZINDEX = 3000000;
     var loadScripts = _.once(function() {
-        var path = gmxCore.getModulePath('cadastre') + 'L.Cadastre/src/',
-            corePluginLoader = gmxCore.loadScript(path + 'L.Cadastre.js')
-                .then(gmxCore.loadScript.bind(gmxCore, path + 'L.Cadastre.Info.js', null, null)),
-            imageOverlayLoader = gmxCore.loadModule('L.ImageOverlay.Pane');
-        
-        gmxCore.loadCSS(path + 'L.Cadastre.css');
-        return $.when(corePluginLoader, imageOverlayLoader);
+        return gmxCore.loadModule('CadastreLoader', gmxCore.getModulePath('cadastre') + 'DynamicLoader.js');
     });
-    
-    var CadastreVirtualLayer = L.LayerGroup.extend({
-        initFromDescription: function(layerDescription) {
-            this._gmxProperties = layerDescription.properties;
-            this._loadAndAddLayer = _.once(this._loadAndAddLayer);
-            return this;
-        },
-        getGmxProperties: function() {
-            return this._gmxProperties;
-        },
-        
-        _loadAndAddLayer: function() {
-            loadScripts().then(function() {
-                var cadastreLayer = new L.Cadastre(null, {
-                    zIndex: DEFAULT_ZINDEX
-                });
-                this.addLayer(cadastreLayer);
-            }.bind(this));
-        },
-        
-        onAdd: function(map) {
-            L.LayerGroup.prototype.onAdd.call(this, map);
-            this._loadAndAddLayer();
-        }
-    });
-    
-    var addLayerClass = function() {
-        L.gmx.addLayerClass('Cadastre', CadastreVirtualLayer);
-    }
 
     var publicInterface = {
         pluginName: 'Cadastre',
@@ -428,8 +393,8 @@
     }
 
     window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
-        init: function() {
-            addLayerClass();
+        init: function(module, path) {
+            return gmxCore.loadModule('CadastreVirtualLayer', path + 'GmxCadastreLayer.js');
         }
     });
 })();
