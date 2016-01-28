@@ -51,6 +51,6 @@ var CadastreVirtualLayer = L.LayerGroup.extend({
 
 L.gmx.addLayerClass('Cadastre', CadastreVirtualLayer);
 
-window.gmxCore && gmxCore.addModule('CadastreVirtualLayer', {});
+window.gmxCore && gmxCore.addModule('CadastreVirtualLayer', {layerClass: CadastreVirtualLayer});
 
 })();
