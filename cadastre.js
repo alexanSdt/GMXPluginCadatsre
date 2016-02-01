@@ -301,11 +301,11 @@
                         layerWMS.redraw();
                         var addTools = !cadastreToolsGroup;
                         if (gParams.showToolbar && addTools) {
-                            cadastreToolsGroup = new L.Control.gmxIconGroup({
+                            cadastreToolsGroup = L.control.gmxIconGroup({
                                 singleSelection: true,
                                 isSortable: true,
                                 items: [
-                                    new L.Control.gmxIcon({
+                                    L.control.gmxIcon({
                                         id: 'cadastreInfo',
                                         togglable: true,
                                         title: 'Информация об участке'
@@ -318,7 +318,7 @@
                                         }
                                     })
                                     ,
-                                    new L.Control.gmxIcon({
+                                    L.control.gmxIcon({
                                         id: 'cadastreDx',
                                         togglable: true,
                                         title: 'Смещение карты'
