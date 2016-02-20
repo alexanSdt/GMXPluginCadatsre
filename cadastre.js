@@ -389,6 +389,21 @@
             if (gParams.initCadastre) {
                 lmap.addLayer(layerWMS);
             }
+            
+            _mapHelper.customParamsManager.addProvider({
+                name: 'CadastrePlugin',
+                loadState: function(state) {
+                    if (state.isVisible) {
+                        lmap.addLayer(layerGroup);
+                    }
+                },
+                saveState: function() {
+                    return {
+                        version: '1.0.0',
+                        isVisible: lmap.hasLayer(layerGroup)
+                    }
+                }
+            });
         }
     }
 
