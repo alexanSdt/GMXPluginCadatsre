@@ -138,37 +138,39 @@
         }
     };
 
-    var lmap, layerWMS;
+    var layerGroup;
 
     var publicInterface = {
         pluginName: 'Cadastre',
 
         afterViewer: function (params, map) {
-            var lmap = nsGmx.leafletMap,
-				gmxLayers = lmap.gmxControlsManager.get('layers'),
-				layerGroup = L.layerGroup(),
-				layerWMS;
+			if (!layerGroup) {
+                var lmap = nsGmx.leafletMap,
+                    gmxLayers = lmap.gmxControlsManager.get('layers'),
+                    layerWMS;
 
-            gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
+                layerGroup = L.layerGroup();
+                gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
 
-            lmap
-                .on('layeradd', function (ev) {
-                    if (ev.layer === layerGroup) {
-						if (!layerWMS) {
-							L.gmx.loadLayer('E7FDC4AA37E94F8FB7F7DA8D62D92D2E', '601A1D04DD5140388BF5C1A3AD5588F5').then(function(cadastreLayer) {
-                                cadastreLayer._overlays = {};
-								layerWMS = cadastreLayer;
-								layerGroup.addLayer(cadastreLayer);
-								layerWMS.getContainer().style.cursor = 'help';
-                                lmap.on('click', function(ev) {
-                                    L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: ev.latlng});
+                lmap
+                    .on('layeradd', function (ev) {
+                        if (ev.layer === layerGroup) {
+                            if (!layerWMS) {
+                                L.gmx.loadLayer('E7FDC4AA37E94F8FB7F7DA8D62D92D2E', '601A1D04DD5140388BF5C1A3AD5588F5').then(function(cadastreLayer) {
+                                    cadastreLayer._overlays = {};
+                                    layerWMS = cadastreLayer;
+                                    layerGroup.addLayer(cadastreLayer);
+                                    layerWMS.getContainer().style.cursor = 'help';
+                                    lmap.on('click', function(ev) {
+                                        L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: ev.latlng});
+                                    });
                                 });
-							});
-						} else {
-							layerWMS.getContainer().style.cursor = 'help';
-						}
-					}
-				});
+                            } else {
+                                layerWMS.getContainer().style.cursor = 'help';
+                            }
+                        }
+                    });
+            }
         }
     };
 
