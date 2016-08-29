@@ -251,7 +251,7 @@
                     str = str.trim();
 					var it = L.CadUtils.getCadastreLayer(str);
                     if (!searchControl || !it) { return false; }
-					gmxAPIutils.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + it.id,
+					L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + it.id,
 						{
 							WrapStyle: 'func',
 							text: str,
