@@ -114,7 +114,9 @@
 			for (var i = 0, len = data.features.length; i < len; i++) {
                 var it = data.features[i];
 				it.title = it.attrs.address || it.attrs.name;
-                if (it.title && it.extent && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
+                if ( it.type === 2 ||
+					(it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin))
+				) {
                     out.push(it);
                 }
             }
