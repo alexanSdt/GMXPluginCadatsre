@@ -117,7 +117,8 @@
 
 				if (!Number(cnArr[cnArr.length - 1])) { continue; }
 				it.title = it.attrs.address || it.attrs.name;
-                if (it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
+                if (it.extent) {
+                // if (it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
                     out.push(it);
                 }
             }
