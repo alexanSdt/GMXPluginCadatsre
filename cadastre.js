@@ -112,11 +112,12 @@
         parseData: function(data, tolerance) {
             var out = [];
 			for (var i = 0, len = data.features.length; i < len; i++) {
-                var it = data.features[i];
+                var it = data.features[i],
+					cnArr = (it.attrs.cn || '').split(':');
+
+				if (!Number(cnArr[cnArr.length - 1])) { continue; }
 				it.title = it.attrs.address || it.attrs.name;
-                if ( it.type === 2 ||
-					(it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin))
-				) {
+                if (it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
                     out.push(it);
                 }
             }
@@ -176,7 +177,7 @@
             L.DomUtil.create('div', 'address', div).innerHTML = it.title || '';
             var inputShowObject = L.DomUtil.create('input', 'ShowObject', div),
                 showObject = L.DomUtil.create('span', 'ShowObjectLabel', div);
-            showObject.innerHTML = 'показать участок';
+            showObject.innerHTML = 'Выделить границу';
             inputShowObject.type = 'checkbox';
             inputShowObject._cad = cn;
             if (cadastrePkk5._overlays[inputShowObject._cad]) {
@@ -194,10 +195,11 @@
             });
             return res;
         },
-        _clearOverlays: function(cadastrePkk5) {
+        _clearOverlays: function(cadastrePkk5, map) {
+			map = map || cadastrePkk5._map;
 			for(var id in cadastrePkk5._overlays) {
 				var overlay = cadastrePkk5._overlays[id];
-				cadastrePkk5._map.removeLayer(overlay);
+				map.removeLayer(overlay);
 				if (overlay._dObj) {
 					overlay._dObj.remove();
 				}
@@ -284,6 +286,7 @@
                 gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
 				var clickOn = function(ev) {
 					if (!lmap.isGmxDrawing()) {
+						lmap._skipClick = true;
 						layerGroup._cadClickLatLng = ev.latlng;
 						L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: layerGroup._cadClickLatLng});
 					}
@@ -337,6 +340,7 @@
                     .on('layerremove', function (ev) {
                         if (ev.layer === layerGroup) {
 							lmap.off('click', clickOn);
+							if (layerWMS) { L.CadUtils._clearOverlays(layerWMS, lmap); }
 							L.CadUtils._clearLastBalloon(lmap);
 							toogleSearch(false);
 						}
