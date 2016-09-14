@@ -117,10 +117,10 @@
 
 				if (!Number(cnArr[cnArr.length - 1])) { continue; }
 				it.title = it.attrs.address || it.attrs.name;
-                if (it.extent) {
+                // if (it.extent) {
                 // if (it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
                     out.push(it);
-                }
+                // }
             }
             return out.sort(function (a, b) {
 				return b.sort - a.sort;
@@ -230,10 +230,19 @@
                     var res = 'В данной точке объекты не найдены.<br><div class="red"></div>';
                     var arr = L.CadUtils.parseData(data, tolerance);
                     if (arr.length) {
-						popup._its = arr;
 						popup._itsCurr = 0;
+						for (var i = arr.length - 1; i >=0; i--) {
+							if (arr[i].attrs.cn === ev.cn) {
+								popup._itsCurr = i;
+								break;
+							}
+						}
+						
+						popup._its = arr;
                         res = L.CadUtils.getContent(cadastrePkk5, popup);
-                    }
+                    // } else {
+						// nsGmx.Utils.showDialog('Объект не найден!', '', 300, 150);
+					}
                     popup.setContent(res);
                     return 1;
                 });
@@ -311,6 +320,12 @@
 						if (result && result.features && result.features.length) {
 							var res = result.features[0];
 							L.CadUtils.setBoundsView(res.attrs.cn, res, layerWMS);
+
+							var featureExtent = L.CadUtils.getFeatureExtent(res, layerWMS._map);							
+							layerGroup._cadClickLatLng = featureExtent.latlng;
+							L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: featureExtent.latlng, cn: str});
+						} else {
+							showErrorMessage(it.title + '`' + str + '`' + ' не найден!', true, 'Поиск по кадастровым номерам');
 						}
 					});
                     return true;
