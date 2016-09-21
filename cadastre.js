@@ -92,7 +92,7 @@
             return overlay;
         },
         getFeature: function(id, cadCount, featureCont, layer) {
-			gmxAPIutils.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + layer.id + '/' + id, {},
+			L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + layer.id + '/' + id, {},
 				{
 					callbackParamName: 'callback'
 				}
