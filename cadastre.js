@@ -62,14 +62,15 @@
     L.CadUtils = {
         overlays: {},
         setOverlay: function(attr) {
-            // var ids = attr.type === 5 ? [0, 1 , 2, 3, 4, 5] : [6, 7],
-            var ids = [0, 1 , 2, 3, 4, 5, 6, 7, 8, 9, 10],
+			var id = attr.id,
+				layer = L.CadUtils.getCadastreLayer(id),
+				ids = [0, 1 , 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 params = {
                     size: attr.size.join(','),
                     bbox: attr.bbox.join(','),
                     layers: 'show:' + ids.join(','),
                     layerDefs: '{' + ids.map(function(nm) {
-                        return '\"' + nm + '\":\"ID = \'' + attr.id + '\'"'
+                        return '\"' + nm + '\":\"ID = \'' + id + '\'"'
                     }).join(',') + '}',
                     format: 'png32',
                     dpi: 96,
@@ -77,7 +78,9 @@
                     imageSR: 102100,
                     bboxSR: 102100
                 },
-                imageUrl = 'http://pkk5.rosreestr.ru/arcgis/rest/services/Cadastre/CadastreSelected/MapServer/export?f=image';
+                imageUrl = 'http://pkk5.rosreestr.ru/arcgis/rest/services/Cadastre/';
+                
+			imageUrl += (layer.id === 10 ? 'ZONESSelected' : 'CadastreSelected') + '/MapServer/export?f=image';
 
             for (var key in params) {
                 imageUrl += '&' + key + '=' + params[key];
@@ -87,6 +90,39 @@
                     L.DomUtil.addClass(overlay._image, 'help-cadastre');
                 });
             return overlay;
+        },
+        getFeature: function(id, cadCount, featureCont, layer) {
+			gmxAPIutils.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + layer.id + '/' + id, {},
+				{
+					callbackParamName: 'callback'
+				}
+			).then(function(data) {
+				if (data.feature) {
+					var attrs = data.feature.attrs,
+						stat = L.CadUtils.getState(attrs.statecd),
+						address = attrs.address || attrs.desc || '',
+						plans = '',
+						trs = [];
+
+					trs.push('<tr><td class="first">Тип:</td><td>' + layer.title + '</td></tr>');
+					trs.push('<tr><td class="first">Кад.номер:</td><td>' + attrs.cn + '</td></tr>');
+					plans += '<a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&type=1" target="_blank">План ЗУ</a>' ;
+					if (attrs.kvartal) {
+						trs.push('<tr><td class="first">Кад.квартал:</td><td>' + attrs.kvartal_cn + '</td></tr>');
+						plans += ' <a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&parent=' + attrs.kvartal + '&type=2" target="_blank">План КК</a>';
+					}
+					if (stat) { trs.push('<tr><td class="first">Статус:</td><td>' + stat + '</td></tr>'); }
+					if (address) {
+						trs.push('<tr><td class="first">Адрес:</td><td>' + address + '</td></tr>');
+					}
+
+					featureCont.innerHTML = '';
+					L.DomUtil.create('table', 'table', featureCont).innerHTML = trs.join('\n');
+					if (layer.id === 1) {
+						L.DomUtil.create('div', 'plans', cadCount).innerHTML = plans;
+					}
+				}
+			});
         },
         getFeatureExtent: function(attr, map) {
             var R = 6378137,
@@ -113,10 +149,12 @@
             var out = [];
 			for (var i = 0, len = data.features.length; i < len; i++) {
                 var it = data.features[i],
+					layer = L.CadUtils.getCadastreLayer(it.attrs.id || it.attrs.cn || '', it.type),
 					cnArr = (it.attrs.cn || '').split(':');
 
+				if (!layer) { continue; }
 				if (!Number(cnArr[cnArr.length - 1])) { continue; }
-				it.title = it.attrs.address || it.attrs.name;
+				it.title = it.attrs.address || it.attrs.name || it.attrs.desc;
                 // if (it.extent) {
                 // if (it.extent && it.title && tolerance < Math.max(it.extent.xmax - it.extent.xmin, it.extent.ymax - it.extent.ymin)) {
                     out.push(it);
@@ -148,17 +186,21 @@
 				curr = popup._itsCurr,
 				len = popup._its.length,
 				it = popup._its[curr],
+				id = it.attrs.id || it.attrs.cn || '',
 				cn = it.attrs.cn || '',
-				layer = L.CadUtils.getCadastreLayer(cn.trim()),
+				layer = L.CadUtils.getCadastreLayer(id, it.type),
 				title = (layer.title || '').toUpperCase(),
                 res = L.DomUtil.create('div', 'cadInfo'),
-                div = L.DomUtil.create('div', 'cadItem', res);
+                div = L.DomUtil.create('div', 'cadItem', res),
+				cadNav = L.DomUtil.create('div', 'cadNav', div),
+				featureCont = L.DomUtil.create('div', 'featureCont', div),
+				operCont = L.DomUtil.create('div', 'operCont', div),
+				cadLeft = L.DomUtil.create('span', 'cadLeft', cadNav),
+				cadCount = L.DomUtil.create('span', 'cadCount', cadNav),
+				cadRight = L.DomUtil.create('span', 'cadRight', cadNav);
 
-			var cadNav = L.DomUtil.create('div', 'cadNav', div);
-			var cadLeft = L.DomUtil.create('span', 'cadLeft', cadNav);
-			var cadCount = L.DomUtil.create('span', 'cadCount', cadNav);
-			var cadRight = L.DomUtil.create('span', 'cadRight', cadNav);
-			cadCount.innerHTML = title + ' (' + (curr + 1) + '/' + len + ')';
+			cadCount.innerHTML = title + ' (' + (curr + 1) + '/' + len + ')<br>' + id;
+
 			cadLeft.style.visibility = curr ? 'visible' : 'hidden';
 			cadLeft.innerHTML = '<';
 			cadRight.style.visibility = curr < len - 1 ? 'visible' : 'hidden';
@@ -174,10 +216,9 @@
 				popup.setContent(L.CadUtils.getContent(cadastrePkk5, popup));
             });
 
-			L.DomUtil.create('div', 'cadNum', div).innerHTML = cn;
-            L.DomUtil.create('div', 'address', div).innerHTML = it.title || '';
-            var inputShowObject = L.DomUtil.create('input', 'ShowObject', div),
-                showObject = L.DomUtil.create('span', 'ShowObjectLabel', div);
+            featureCont.innerHTML = it.title || '';
+            var inputShowObject = L.DomUtil.create('input', 'ShowObject', operCont),
+                showObject = L.DomUtil.create('span', 'ShowObjectLabel', operCont);
             showObject.innerHTML = 'Выделить границу';
             inputShowObject.type = 'checkbox';
             inputShowObject._cad = cn;
@@ -194,6 +235,7 @@
 					L.CadUtils.setBoundsView(id, popup._its[popup._itsCurr], cadastrePkk5);
                 }
             });
+			L.CadUtils.getFeature(id, cadCount, featureCont, layer);
             return res;
         },
         _clearOverlays: function(cadastrePkk5, map) {
@@ -219,7 +261,7 @@
 					tolerance = Math.floor(1049038 / Math.pow(2, map.getZoom()));
 
                 L.CadUtils._clearLastBalloon(map);
-                var popup = L.popup({minWidth: 200})
+                var popup = L.popup({minWidth: 300, className: 'cadasterPopup'})
                     .setLatLng(latlng)
                     .setContent('<div class="cadInfo">Поиск информации...</div>')
                     .openOn(map);
@@ -248,6 +290,10 @@
                 });
             }
         },
+		_states: {'01': 'Ранее учтенный', '03': 'Условный', '04': 'Внесенный', '05': 'Временный (Удостоверен)', '06': 'Учтенный', '07': 'Снят с учета', '08': 'Аннулированный'},
+        getState: function(id) {
+			return this._states[id] || '';
+        },
 		_cadastreLayers: [
 			{id: 5, title: 'ОКС', 		reg: /^\d\d:\d+:\d+:\d+:\d+$/},
 			{id: 1, title: 'Участок', 	reg: /^\d\d:\d+:\d+:\d+$/},
@@ -269,9 +315,11 @@
 			// /\d\d:\d+:\d+$/,
 			// /\d\d:\d+:\d+:\d+$/
 		],
-		getCadastreLayer: function (str) {
+		getCadastreLayer: function (str, type) {
+			str = str.trim();
 			for (var i = 0, len = this._cadastreLayers.length; i < len; i++) {
 				var it = this._cadastreLayers[i];
+				if (it.id === type) { return it; }
 				if (it.reg.exec(str)) { return it; }
 			}
 			return null;
@@ -290,8 +338,16 @@
                     gmxLayers = lmap.gmxControlsManager.get('layers'),
                     layerWMS,
 					cadNeedClickLatLng,
-					flagSetHook = true;
-
+					flagSetHook = true,
+					layers = [
+						{mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: '601A1D04DD5140388BF5C1A3AD5588F5'}
+					];
+				if (params.ZONES === 'true') {
+					layers.push({mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: 'D72C86EE75A145A7BA0DAA657E28B700'});
+				}
+				if (params.ADDON === 'true') {
+					layers.push({mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: '112286131D8C41019BB3188CFD8E614A'});
+				}
                 layerGroup = L.layerGroup();
                 gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
 				var clickOn = function(ev) {
@@ -352,6 +408,7 @@
 					}
 				};
 
+				var overlayPane = lmap.getPanes().overlayPane;
                 lmap
                     .on('layerremove', function (ev) {
                         if (ev.layer === layerGroup) {
@@ -359,16 +416,21 @@
 							if (layerWMS) { L.CadUtils._clearOverlays(layerWMS, lmap); }
 							L.CadUtils._clearLastBalloon(lmap);
 							toogleSearch(false);
+							if (overlayPane) {
+								overlayPane.style.cursor = 'default';
+							}
 						}
 					})
 					.on('layeradd', function (ev) {
                         if (ev.layer === layerGroup) {
                             if (!layerWMS) {
-                                L.gmx.loadLayer('E7FDC4AA37E94F8FB7F7DA8D62D92D2E', '601A1D04DD5140388BF5C1A3AD5588F5').then(function(cadastreLayer) {
+								L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
                                     cadastreLayer._overlays = {};
                                     layerWMS = cadastreLayer;
 									cadastreLayer.options.zIndex = 1000000;
                                     layerGroup.addLayer(cadastreLayer);
+                                    if (zones) { layerGroup.addLayer(zones); }
+                                    if (addon) { layerGroup.addLayer(addon); }
                                     layerWMS.getContainer().style.cursor = 'help';
 									if (cadNeedClickLatLng) {
 										clickOn({latlng: cadNeedClickLatLng});
@@ -377,6 +439,9 @@
                             } else {
                                 layerWMS.getContainer().style.cursor = 'help';
                             }
+							if (overlayPane) {
+								overlayPane.style.cursor = 'help';
+							}
 							lmap.on('click', clickOn);
 							toogleSearch(true);
                         }
