@@ -4,6 +4,7 @@
     var layerGroup,
 		searchControl,
 		inputShowObject,
+		lastFeature,
 		lastOverlayId;
 
     window._translationsHash.addtext("rus", {
@@ -52,10 +53,12 @@
 		if (rings.length) {
 			var obj = rings.length > 1 ? L.multiPolygon(rings) : L.polygon(rings[0]),
 				geo = _map.gmxDrawing.add(obj);
+				
 			_map.addLayer(geo);
 			if (this.options.geoLink) { this._dObj = geo; }
 			this.bringToBack();
 			_map._pathRoot.style.cursor = 'help';
+			return geo;
 		}
 	  }
 	});
@@ -101,7 +104,10 @@
 						L.CadUtils._clearOverlays(map, target);
 						L.DomUtil.addClass(target._image, 'help-cadastre');
 						if (inputShowObject && inputShowObject.checked) {
-							target.exportGeometry();
+							var geo = target.exportGeometry();
+							if (geo && lastFeature) {
+								geo.setOptions({properties: lastFeature});
+							}
 						}
 					}
                 });
@@ -109,7 +115,7 @@
             overlay.addTo(map);
             return overlay;
         },
-        getFeature: function(id, cadCount, featureCont, layer) {
+        getFeature: function(id, cadCount, featureCont, layer, map) {
 			L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + layer.id + '/' + id, {},
 				{
 					callbackParamName: 'callback'
@@ -163,8 +169,16 @@
 					if (layer.id === 1) {
 						L.DomUtil.create('div', 'plans', cadCount).innerHTML = plans;
 					}
+					lastFeature = data.feature;
+					L.CadUtils.setDrawingProperties(id, map);
 				}
 			});
+        },
+        setDrawingProperties: function(id, map) {
+			var overlay = L.CadUtils._getOverlay(id, map);
+			if (overlay && overlay._dObj && lastFeature) {
+				overlay._dObj.setOptions({properties: lastFeature});
+			}
         },
         getFeatureExtent: function(attr, map) {
             var R = 6378137,
@@ -271,7 +285,7 @@
 					}
 				}
             });
-			L.CadUtils.getFeature(id, cadCount, featureCont, layer);
+			L.CadUtils.getFeature(id, cadCount, featureCont, layer, map);
             return res;
         },
         _getOverlay: function(id, map) {
