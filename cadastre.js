@@ -53,7 +53,7 @@
 		if (rings.length) {
 			var obj = rings.length > 1 ? L.multiPolygon(rings) : L.polygon(rings[0]),
 				geo = _map.gmxDrawing.add(obj);
-				
+
 			_map.addLayer(geo);
 			if (this.options.geoLink) { this._dObj = geo; }
 			this.bringToBack();
@@ -92,7 +92,7 @@
                 },
                 imageUrl = 'http://pkk5.rosreestr.ru/arcgis/rest/services/Cadastre/';
                 
-			imageUrl += (layer.id === 10 ? 'ZONESSelected' : 'CadastreSelected') + '/MapServer/export?f=image';
+			imageUrl += (layer && layer.id === 10 ? 'ZONESSelected' : 'CadastreSelected') + '/MapServer/export?f=image';
 
             for (var key in params) {
                 imageUrl += '&' + key + '=' + params[key];
@@ -101,7 +101,7 @@
 				.on('load', function(ev) {
 					var target = ev.target;
 					if (lastOverlayId === target.options.id) {
-						L.CadUtils._clearOverlays(map, target);
+						L.CadUtils._clearOverlays(map, lastOverlayId);
 						L.DomUtil.addClass(target._image, 'help-cadastre');
 						if (inputShowObject && inputShowObject.checked) {
 							var geo = target.exportGeometry();
@@ -230,6 +230,8 @@
 				L.CadUtils.setOverlay(it, map, flagExternalGeo);
 			};
 			map.on('moveend', onViewreset);
+
+			// map.fitBounds(featureExtent.latLngBounds, {animate: false});
 			map.fitBounds(featureExtent.latLngBounds, {reset: true});
         },
         getContent: function(cadastrePkk5, popup, skipOverlay) {
@@ -297,10 +299,11 @@
 			}
 			return null;
         },
-        _clearOverlays: function(map, skipOverlay) {
+        _clearOverlays: function(map, skipID) {
+			// 66:56:0102008:165
 			for(var id in map._layers) {
 				var overlay = map._layers[id];
-				if (overlay instanceof L.ImageOverlay.CrossOrigin && overlay !== skipOverlay) {
+				if (overlay instanceof L.ImageOverlay.CrossOrigin && overlay.options.id !== skipID) {
 					overlay.remove();
 					if (overlay._dObj) {
 						overlay._dObj.remove();
@@ -319,7 +322,7 @@
                     latlng = ev.latlng,
 					tolerance = Math.floor(1049038 / Math.pow(2, map.getZoom()));
 
-				L.CadUtils._clearOverlays(map);
+				// L.CadUtils._clearOverlays(map);
                 L.CadUtils._clearLastBalloon(map);
                 var popup = L.popup({minWidth: 350, className: 'cadasterPopup'}, cadastrePkk5)
                     .setLatLng(latlng)
@@ -514,6 +517,8 @@
                             if (!layerWMS) {
 								L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
                                     layerWMS = cadastreLayer;
+									// lmap.options.maxZoom = 22;
+									//cadastreLayer.options.maxZoom = 22;
 									cadastreLayer.options.zIndex = 1000000;
                                     layerGroup.addLayer(cadastreLayer);
                                     if (zones) { layerGroup.addLayer(zones); }
