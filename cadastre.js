@@ -5,6 +5,8 @@
 		searchControl,
 		inputShowObject,
 		lastFeature,
+		lastFeatureId,
+		lastOverlays = [],
 		lastOverlayId;
 
     window._translationsHash.addtext("rus", {
@@ -99,9 +101,11 @@
             }
             var overlay = new L.ImageOverlay.CrossOrigin(imageUrl, map.getBounds(), {opacity: 0.5, geoLink: !flagExternalGeo, full: attr.full, id: id, it: it, clickable: true})
 				.on('load', function(ev) {
-					var target = ev.target;
-					if (lastOverlayId === target.options.id) {
-						L.CadUtils._clearOverlays(map, lastOverlayId);
+					var target = ev.target,
+						len = lastOverlays.length;
+
+					if (len && target._leaflet_id === lastOverlays[len - 1]._leaflet_id) {
+						L.CadUtils.clearOverlays(1);
 						L.DomUtil.addClass(target._image, 'help-cadastre');
 						if (inputShowObject && inputShowObject.checked) {
 							var geo = target.exportGeometry();
@@ -113,72 +117,80 @@
                 });
 			lastOverlayId = id;
             overlay.addTo(map);
+			lastOverlays.push(overlay);
+			L.CadUtils.clearOverlays(2);
             return overlay;
         },
+        clearOverlays: function(nm) {	// оставить nm оверлеев
+			lastOverlays.splice(0, lastOverlays.length - (nm || 0)).forEach(function(overlay) {
+				overlay.remove();
+				if (overlay._dObj) {
+					overlay._dObj.remove();
+				}
+			});
+        },
         getFeature: function(id, cadCount, featureCont, layer, map) {
+			lastFeature = null;
 			L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + layer.id + '/' + id, {},
 				{
 					callbackParamName: 'callback'
 				}
 			).then(function(data) {
-				if (data.feature) {
-					var attrs = data.feature.attrs,
-						stat = L.CadUtils.getState(attrs.statecd),
-						address = attrs.address || attrs.desc || '',
-						plans = '',
-						trs = [];
+				if (lastFeatureId !== id || !data.feature) { return; }
+				var attrs = data.feature.attrs,
+					stat = L.CadUtils.getState(attrs.statecd),
+					address = attrs.address || attrs.desc || '',
+					plans = '',
+					trs = [];
 
-					trs.push('<tr><td class="first">Тип:</td><td>' + layer.title + '</td></tr>');
-					trs.push('<tr><td class="first">Кад.номер:</td><td>' + attrs.cn + '</td></tr>');
-					plans += '<a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&type=1" target="_blank">План ЗУ</a>' ;
-					if (attrs.kvartal) {
-						trs.push('<tr><td class="first">Кад.квартал:</td><td>' + attrs.kvartal_cn + '</td></tr>');
-						plans += ' <a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&parent=' + attrs.kvartal + '&type=2" target="_blank">План КК</a>';
-					}
-					if (stat) { trs.push('<tr><td class="first">Статус:</td><td>' + stat + '</td></tr>'); }
-					if (attrs.name) {
-						trs.push('<tr><td class="first">Наименование:</td><td>' + attrs.name + '</td></tr>');
-					}
-					if (attrs.cad_cost) {
-						trs.push('<tr><td class="first">Кадастровая стоимость:</td><td>' + attrs.cad_cost + '</td></tr>');
-					}
-					if (attrs.area_value) {
-						trs.push('<tr><td class="first">Общая площадь:</td><td>' + attrs.area_value + '</td></tr>');
-					}
+				trs.push('<tr><td class="first">Тип:</td><td>' + layer.title + '</td></tr>');
+				trs.push('<tr><td class="first">Кад.номер:</td><td>' + attrs.cn + '</td></tr>');
+				plans += '<a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&type=1" target="_blank">План ЗУ</a>' ;
+				if (attrs.kvartal) {
+					trs.push('<tr><td class="first">Кад.квартал:</td><td>' + attrs.kvartal_cn + '</td></tr>');
+					plans += ' <a href="http://pkk5.rosreestr.ru/plan.html?id=' + attrs.id + '&parent=' + attrs.kvartal + '&type=2" target="_blank">План КК</a>';
+				}
+				if (stat) { trs.push('<tr><td class="first">Статус:</td><td>' + stat + '</td></tr>'); }
+				if (attrs.name) {
+					trs.push('<tr><td class="first">Наименование:</td><td>' + attrs.name + '</td></tr>');
+				}
+				if (attrs.cad_cost) {
+					trs.push('<tr><td class="first">Кадастровая стоимость:</td><td>' + attrs.cad_cost + '</td></tr>');
+				}
+				if (attrs.area_value) {
+					trs.push('<tr><td class="first">Общая площадь:</td><td>' + attrs.area_value + '</td></tr>');
+				}
 
-					if (address) {
-						trs.push('<tr><td class="first">Адрес:</td><td>' + address + '</td></tr>');
-					}
-					if (attrs.category_type) {
-						trs.push('<tr><td class="first">Категория земель:</td><td>' + L.CadUtils.getCategoryType(attrs.category_type) + '</td></tr>');
-					}
-					if (attrs.fp) {
-						trs.push('<tr><td class="first">Форма собственности:</td><td>' + L.CadUtils.getOwnership(attrs.fp) + '</td></tr>');
-					}
-					if (attrs.util_code) {
-						trs.push('<tr><td class="first">Разрешенное использование:</td><td>' + L.CadUtils.getUtilization(attrs.util_code) + '</td></tr>');
-					}
-					if (attrs.util_by_doc) {
-						trs.push('<tr><td class="first">по документу:</td><td>' + attrs.util_by_doc + '</td></tr>');
-					}
-					if (attrs.cad_record_date) {
-						trs.push('<tr><td class="first">Дата изменения сведений в ГКН:</td><td>' + attrs.cad_record_date + '</td></tr>');
-					}
-					featureCont.innerHTML = '';
-					L.DomUtil.create('table', 'table', featureCont).innerHTML = trs.join('\n');
-					if (layer.id === 1) {
-						L.DomUtil.create('div', 'plans', cadCount).innerHTML = plans;
-					}
-					lastFeature = data.feature;
-					L.CadUtils.setDrawingProperties(id, map);
+				if (address) {
+					trs.push('<tr><td class="first">Адрес:</td><td>' + address + '</td></tr>');
+				}
+				if (attrs.category_type) {
+					trs.push('<tr><td class="first">Категория земель:</td><td>' + L.CadUtils.getCategoryType(attrs.category_type) + '</td></tr>');
+				}
+				if (attrs.fp) {
+					trs.push('<tr><td class="first">Форма собственности:</td><td>' + L.CadUtils.getOwnership(attrs.fp) + '</td></tr>');
+				}
+				if (attrs.util_code) {
+					trs.push('<tr><td class="first">Разрешенное использование:</td><td>' + L.CadUtils.getUtilization(attrs.util_code) + '</td></tr>');
+				}
+				if (attrs.util_by_doc) {
+					trs.push('<tr><td class="first">по документу:</td><td>' + attrs.util_by_doc + '</td></tr>');
+				}
+				if (attrs.cad_record_date) {
+					trs.push('<tr><td class="first">Дата изменения сведений в ГКН:</td><td>' + attrs.cad_record_date + '</td></tr>');
+				}
+				featureCont.innerHTML = '';
+				L.DomUtil.create('table', 'table', featureCont).innerHTML = trs.join('\n');
+				if (layer.id === 1) {
+					L.DomUtil.create('div', 'plans', cadCount).innerHTML = plans;
+				}
+				lastFeature = data.feature;
+				var len = lastOverlays.length,
+					overlay = len ? lastOverlays[len - 1] : null;
+				if (overlay && overlay._dObj) {
+					overlay._dObj.setOptions({properties: lastFeature});
 				}
 			});
-        },
-        setDrawingProperties: function(id, map) {
-			var overlay = L.CadUtils._getOverlay(id, map);
-			if (overlay && overlay._dObj && lastFeature) {
-				overlay._dObj.setOptions({properties: lastFeature});
-			}
         },
         getFeatureExtent: function(attr, map) {
             var R = 6378137,
@@ -252,6 +264,7 @@
 				cadCount = L.DomUtil.create('span', 'cadCount', cadNav),
 				cadRight = L.DomUtil.create('span', 'cadRight', cadNav);
 
+			lastFeatureId = id;
 			cadCount.innerHTML = title + ' (' + (curr + 1) + '/' + len + ')<br>' + id;
 
 			cadLeft.style.visibility = curr ? 'visible' : 'hidden';
@@ -281,7 +294,8 @@
                 if (this.checked) {
 					L.CadUtils.setBoundsView(id, popup._its[popup._itsCurr], cadastrePkk5, ev.ctrlKey);
                 } else {
-					var overlay = L.CadUtils._getOverlay(id, map);
+					var len = lastOverlays.length,
+						overlay = len ? lastOverlays[len - 1] : null;
 					if (overlay && overlay._dObj) {
 						overlay._dObj.remove();
 					}
@@ -289,27 +303,6 @@
             });
 			L.CadUtils.getFeature(id, cadCount, featureCont, layer, map);
             return res;
-        },
-        _getOverlay: function(id, map) {
-			for(var lid in map._layers) {
-				var overlay = map._layers[lid];
-				if (overlay instanceof L.ImageOverlay.CrossOrigin && overlay.options.id === id) {
-					return overlay;
-				}
-			}
-			return null;
-        },
-        _clearOverlays: function(map, skipID) {
-			// 66:56:0102008:165
-			for(var id in map._layers) {
-				var overlay = map._layers[id];
-				if (overlay instanceof L.ImageOverlay.CrossOrigin && overlay.options.id !== skipID) {
-					overlay.remove();
-					if (overlay._dObj) {
-						overlay._dObj.remove();
-					}
-				}
-			}
         },
         _clearLastBalloon: function(map) {
 			if (this._lastOpenedPopup && map.hasLayer(this._lastOpenedPopup)) { map.removeLayer(this._lastOpenedPopup); }
@@ -322,7 +315,6 @@
                     latlng = ev.latlng,
 					tolerance = Math.floor(1049038 / Math.pow(2, map.getZoom()));
 
-				// L.CadUtils._clearOverlays(map);
                 L.CadUtils._clearLastBalloon(map);
                 var popup = L.popup({minWidth: 350, className: 'cadasterPopup'}, cadastrePkk5)
                     .setLatLng(latlng)
@@ -337,7 +329,9 @@
                     if (arr.length) {
 						popup._itsCurr = 0;
 						for (var i = arr.length - 1; i >=0; i--) {
-							if (arr[i].attrs.cn === ev.cn) {
+							var attrs = arr[i].attrs,
+								id = attrs.id || attrs.cn
+							if (id === ev.cn) {
 								popup._itsCurr = i;
 								break;
 							}
@@ -430,7 +424,6 @@
 					}
 				};
                 var searchHook = function(str) {
-					L.CadUtils._clearOverlays(lmap);
                     str = str.trim();
 					var it = L.CadUtils.getCadastreLayer(str);
                     if (!searchControl || !it) { return false; }
@@ -484,16 +477,11 @@
 				var overlayPane = lmap.getPanes().overlayPane;
                 lmap
                     .on('moveend', function (ev) {
-						for(var id in lmap._layers) {
-							var overlay = lmap._layers[id];
-							if (overlay instanceof L.ImageOverlay.CrossOrigin) {
-								if (overlay.options.id === lastOverlayId) {
-									if (!overlay.options.full) {
-										if (overlay._dObj) { overlay._dObj.remove(); }
-										L.CadUtils.setOverlay(overlay.options.it, lmap);
-									}
-								} else {
-								}
+						var len = lastOverlays.length;
+						if (len) {
+							var overlay = lastOverlays[len - 1];
+							if (!overlay.options.full) {
+								L.CadUtils.setOverlay(overlay.options.it, lmap);
 							}
 						}
 					})
@@ -501,7 +489,7 @@
                         if (ev.layer === layerGroup) {
 							lmap.off('click', clickOn);
 							lastOverlayId = null;
-							L.CadUtils._clearOverlays(lmap);
+							L.CadUtils.clearOverlays();
 							L.CadUtils._clearLastBalloon(lmap);
 							toogleSearch(false);
 							if (overlayPane) {
@@ -524,11 +512,13 @@
                                     if (zones) { layerGroup.addLayer(zones); }
                                     if (addon) { layerGroup.addLayer(addon); }
                                     layerWMS.getContainer().style.cursor = 'help';
-									if (cadNeedClickLatLng) {
+									if (lastOverlayId) {
+										searchHook(lastOverlayId);
+									} else if (cadNeedClickLatLng) {
 										clickOn({latlng: cadNeedClickLatLng});
 									}
 									layerWMS.on('popupclose', function() {
-										L.CadUtils._clearOverlays(lmap);
+										L.CadUtils.clearOverlays();
 									});
                                 });
                             } else {
