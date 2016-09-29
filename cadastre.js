@@ -7,25 +7,35 @@
 		lastFeature,
 		lastFeatureId,
 		lastOverlays = [],
-		lastOverlayId;
+		lastOverlayId,
+		localeHash = {
+			name: 'Кадастр Росреестра',
+			doSearch: 'Найти'
+		},
+		getTxt = window._gtxt || function(key) {
+			var arr = key.split('.');
+			return localeHash[arr.length - 1] || '';
+		};
 
-    window._translationsHash.addtext("rus", {
-        '$$search$$_Cadastre_0' : 'Поиск по адресам, координатам',
-        '$$search$$_Cadastre_1' : 'Поиск по кадастру, адресам, координатам',
-        cadastrePlugin: {
-            name: 'Кадастр Росреестра',
-            doSearch: 'Найти'
-        }
-    });
+		
 
-    window._translationsHash.addtext("eng", {
-        '$$search$$_Cadastre_0' : 'Search by addresses, coordinates',
-        '$$search$$_Cadastre_1' : 'Search by cadastre, addresses, coordinates',
-        cadastrePlugin: {
-            name: 'Cadastre',
-            doSearch: 'Search'
-        }
-    });
+	if (window._translationsHash) {
+		window._translationsHash.addtext("rus", {
+			'$$search$$_Cadastre_0' : 'Поиск по адресам, координатам',
+			'$$search$$_Cadastre_1' : 'Поиск по кадастру, адресам, координатам',
+			cadastrePlugin: localeHash
+		});
+
+		window._translationsHash.addtext("eng", {
+			'$$search$$_Cadastre_0' : 'Search by addresses, coordinates',
+			'$$search$$_Cadastre_1' : 'Search by cadastre, addresses, coordinates',
+			cadastrePlugin: {
+				name: 'Cadastre',
+				doSearch: 'Search'
+			}
+		});
+	}
+
 	L.ImageOverlay.CrossOrigin = L.ImageOverlay.extend({
 	  _updateOpacity: function () {
 		this._image.crossOrigin = 'anonymous';
@@ -400,8 +410,7 @@
 
         afterViewer: function (params, map) {
 			if (!layerGroup) {
-                var lmap = nsGmx.leafletMap,
-                    gmxLayers = map.gmxControlsManager.get('layers'),
+                var gmxLayers = map.gmxControlsManager.get('layers'),
                     layerWMS,
 					cadNeedClickLatLng,
 					flagSetHook = true,
@@ -415,7 +424,9 @@
 					layers.push({mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: '112286131D8C41019BB3188CFD8E614A'});
 				}
                 layerGroup = L.layerGroup();
-                gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
+				if (gmxLayers) {
+					gmxLayers.addOverlay(layerGroup, getTxt('cadastrePlugin.name'));
+				}
 				var clickOn = function(ev) {
 					if (!map.isGmxDrawing()) {
 						map._skipClick = true;
@@ -460,14 +471,14 @@
 						if (searchControl) {
 							if (flagSetHook) {
 								searchControl.addSearchByStringHook(searchHook, 1001);
-								searchControl.SetPlaceholder(_gtxt('$$search$$_Cadastre_1'));
+								searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_1'));
 							}
 							flagSetHook = false;
 						}
 					} else {
 						if (searchControl) {
 							searchControl.removeSearchByStringHook(searchHook);
-							searchControl.SetPlaceholder(_gtxt('$$search$$_Cadastre_0'));
+							searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_0'));
 						}
 						searchControl = null;
 						flagSetHook = true;
@@ -555,8 +566,15 @@
 					}
 				});
 			}
+			return layerGroup;
         }
     };
 
-    window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {});
+    if (window.gmxCore) {
+		window.gmxCore && window.gmxCore.addModule('cadastre', publicInterface, {
+			css: 'cadastre.css'
+		});
+	} else {
+		window.publicInterface = publicInterface;
+	}
 })();
