@@ -401,7 +401,7 @@
         afterViewer: function (params, map) {
 			if (!layerGroup) {
                 var lmap = nsGmx.leafletMap,
-                    gmxLayers = lmap.gmxControlsManager.get('layers'),
+                    gmxLayers = map.gmxControlsManager.get('layers'),
                     layerWMS,
 					cadNeedClickLatLng,
 					flagSetHook = true,
@@ -417,8 +417,8 @@
                 layerGroup = L.layerGroup();
                 gmxLayers.addOverlay(layerGroup, window._gtxt('cadastrePlugin.name'));
 				var clickOn = function(ev) {
-					if (!lmap.isGmxDrawing()) {
-						lmap._skipClick = true;
+					if (!map.isGmxDrawing()) {
+						map._skipClick = true;
 						layerGroup._cadClickLatLng = ev.latlng;
 						L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: layerGroup._cadClickLatLng});
 					}
@@ -474,29 +474,29 @@
 					}
 				};
 
-				var overlayPane = lmap.getPanes().overlayPane;
-                lmap
+				var overlayPane = map.getPanes().overlayPane;
+                map
                     .on('moveend', function (ev) {
 						var len = lastOverlays.length;
 						if (len) {
 							var overlay = lastOverlays[len - 1];
 							if (!overlay.options.full) {
-								L.CadUtils.setOverlay(overlay.options.it, lmap);
+								L.CadUtils.setOverlay(overlay.options.it, map);
 							}
 						}
 					})
                     .on('layerremove', function (ev) {
                         if (ev.layer === layerGroup) {
-							lmap.off('click', clickOn);
+							map.off('click', clickOn);
 							lastOverlayId = null;
 							L.CadUtils.clearOverlays();
-							L.CadUtils._clearLastBalloon(lmap);
+							L.CadUtils._clearLastBalloon(map);
 							toogleSearch(false);
 							if (overlayPane) {
 								overlayPane.style.cursor = 'default';
 							}
-							if (lmap._pathRoot) {
-								lmap._pathRoot.style.cursor = 'default';
+							if (map._pathRoot) {
+								map._pathRoot.style.cursor = 'default';
 							}
 						}
 					})
@@ -505,7 +505,7 @@
                             if (!layerWMS) {
 								L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
                                     layerWMS = cadastreLayer;
-									// lmap.options.maxZoom = 22;
+									// map.options.maxZoom = 22;
 									//cadastreLayer.options.maxZoom = 22;
 									cadastreLayer.options.zIndex = 1000000;
                                     layerGroup.addLayer(cadastreLayer);
@@ -527,32 +527,34 @@
 							if (overlayPane) {
 								overlayPane.style.cursor = 'help';
 							}
-							if (lmap._pathRoot) {
-								lmap._pathRoot.style.cursor = 'help';
+							if (map._pathRoot) {
+								map._pathRoot.style.cursor = 'help';
 							}
-							lmap.on('click', clickOn);
+							map.on('click', clickOn);
 							toogleSearch(true);
                         }
                     });
             }
-            _mapHelper.customParamsManager.addProvider({
-                name: 'CadastrePlugin',
-                loadState: function(state) {
-                    if (state.isVisible) {
-                        lmap.addLayer(layerGroup);
-						cadNeedClickLatLng = state.latlng;
-						lastOverlayId = state.lastOverlayId;
-                    }
-                },
-                saveState: function() {
-                    return {
-                        version: '1.0.0',
-                        isVisible: lmap.hasLayer(layerGroup),
-                        lastOverlayId: lastOverlayId,
-						latlng: layerGroup._cadClickLatLng
-                    }
-                }
-            });
+            if (window._mapHelper) {
+				_mapHelper.customParamsManager.addProvider({
+					name: 'CadastrePlugin',
+					loadState: function(state) {
+						if (state.isVisible) {
+							map.addLayer(layerGroup);
+							cadNeedClickLatLng = state.latlng;
+							lastOverlayId = state.lastOverlayId;
+						}
+					},
+					saveState: function() {
+						return {
+							version: '1.0.0',
+							isVisible: map.hasLayer(layerGroup),
+							lastOverlayId: lastOverlayId,
+							latlng: layerGroup._cadClickLatLng
+						}
+					}
+				});
+			}
         }
     };
 
