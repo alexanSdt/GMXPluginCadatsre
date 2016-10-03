@@ -120,7 +120,8 @@
 						if (inputShowObject && inputShowObject.checked) {
 							var geo = target.exportGeometry();
 							if (geo && lastFeature) {
-								geo.setOptions({properties: lastFeature});
+								geo.setOptions({cadastreFeature: lastFeature});
+								geo.on('removefrommap', function() { inputShowObject.checked = false; });
 							}
 						}
 					}
@@ -198,7 +199,7 @@
 				var len = lastOverlays.length,
 					overlay = len ? lastOverlays[len - 1] : null;
 				if (overlay && overlay._dObj) {
-					overlay._dObj.setOptions({properties: lastFeature});
+					overlay._dObj.setOptions({cadastreFeature: lastFeature});
 				}
 			});
         },
