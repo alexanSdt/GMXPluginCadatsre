@@ -25,6 +25,11 @@
     padding-left: 10px;
     padding-right: 10px;
 }
+.cadInfo .ShowObject {
+    cursor: pointer;
+	border-radius: 4px;
+    padding: 3px;
+}
 .cadInfo .ShowObjectLabel {
     position: relative;
     top: -3px;

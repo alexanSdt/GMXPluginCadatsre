@@ -8,6 +8,7 @@
 		lastFeatureId,
 		lastOverlays = [],
 		lastOverlayId,
+		notHideDrawing = false,
 		localeHash = {
 			name: 'Кадастр Росреестра',
 			doSearch: 'Найти'
@@ -67,7 +68,7 @@
 				geo = _map.gmxDrawing.add(obj);
 
 			_map.addLayer(geo);
-			if (this.options.geoLink) { this._dObj = geo; }
+			if (this.options.geoLink && !notHideDrawing) { this._dObj = geo; }
 			this.bringToBack();
 			_map._pathRoot.style.cursor = 'help';
 			return geo;
@@ -297,23 +298,36 @@
 			if (!skipOverlay) { L.CadUtils.setOverlay(it, map); }
 
             featureCont.innerHTML = it.title || '';
-            inputShowObject = L.DomUtil.create('input', 'ShowObject', operCont);
-            inputShowObject.type = 'checkbox';
-            inputShowObject._cad = id;
-            var showObject = L.DomUtil.create('span', 'ShowObjectLabel', operCont);
-            showObject.innerHTML = 'Выделить границу';
-            L.DomEvent.on(inputShowObject, 'click', function(ev) {
-                var id = this._cad;
-                if (this.checked) {
-					L.CadUtils.setBoundsView(id, popup._its[popup._itsCurr], cadastrePkk5, ev.ctrlKey);
-                } else {
-					var len = lastOverlays.length,
-						overlay = len ? lastOverlays[len - 1] : null;
-					if (overlay && overlay._dObj) {
-						overlay._dObj.remove();
+			if (notHideDrawing) {
+				inputShowObject = L.DomUtil.create('button', 'ShowObject', operCont);
+				inputShowObject.innerHTML = 'Выделить границу';
+				L.DomEvent.on(inputShowObject, 'click', function(ev) {
+					if (!inputShowObject.checked) {
+						var id = this._cad;
+						inputShowObject.checked = true;
+						// inputShowObject.style.display = 'none';
+						L.CadUtils.setBoundsView(id, popup._its[popup._itsCurr], cadastrePkk5, ev.ctrlKey);
 					}
-				}
-            });
+				});
+			} else {
+				inputShowObject = L.DomUtil.create('input', 'ShowObject', operCont);
+				inputShowObject.type = 'checkbox';
+				inputShowObject._cad = id;
+				var showObject = L.DomUtil.create('span', 'ShowObjectLabel', operCont);
+				showObject.innerHTML = 'Выделить границу';
+				L.DomEvent.on(inputShowObject, 'click', function(ev) {
+					var id = this._cad;
+					if (this.checked) {
+						L.CadUtils.setBoundsView(id, popup._its[popup._itsCurr], cadastrePkk5, ev.ctrlKey);
+					} else {
+						var len = lastOverlays.length,
+							overlay = len ? lastOverlays[len - 1] : null;
+						if (overlay && overlay._dObj) {
+							overlay._dObj.remove();
+						}
+					}
+				});
+			}
 			L.CadUtils.getFeature(id, cadCount, featureCont, layer, map);
             return res;
         },
@@ -420,6 +434,7 @@
 					layers = [
 						{mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: '601A1D04DD5140388BF5C1A3AD5588F5'}
 					];
+				notHideDrawing = params.notHideDrawing;
 				if (params.ZONES === 'true') {
 					layers.push({mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: 'D72C86EE75A145A7BA0DAA657E28B700'});
 				}
