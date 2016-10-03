@@ -120,8 +120,10 @@
 						if (inputShowObject && inputShowObject.checked) {
 							var geo = target.exportGeometry();
 							if (geo && lastFeature) {
-								geo.setOptions({cadastreFeature: lastFeature});
-								geo.on('removefrommap', function() { inputShowObject.checked = false; });
+								geo
+									.setOptions({cadastreFeature: lastFeature})
+									.on('addtomap', function() { inputShowObject.checked = true; })
+									.on('removefrommap', function() { inputShowObject.checked = false; });
 							}
 						}
 					}
