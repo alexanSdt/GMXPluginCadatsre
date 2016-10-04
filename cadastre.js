@@ -426,9 +426,9 @@
         pluginName: 'Cadastre',
 
         afterViewer: function (params, map) {
+			var gmxLayers = map.gmxControlsManager.get('layers');
 			if (!layerGroup) {
-                var gmxLayers = map.gmxControlsManager.get('layers'),
-                    layerWMS,
+                var layerWMS,
 					cadNeedClickLatLng,
 					flagSetHook = true,
 					layers = [
@@ -573,6 +573,8 @@
                         }
                     });
 				toogleSearch(true);
+			} else if (gmxLayers) {
+				gmxLayers.addOverlay(layerGroup, getTxt('cadastrePlugin.name'));
             }
             if (window._mapHelper) {
 				_mapHelper.customParamsManager.addProvider({
