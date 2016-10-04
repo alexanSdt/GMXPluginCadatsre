@@ -452,6 +452,42 @@
 						L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: layerGroup._cadClickLatLng});
 					}
 				};
+				var overlayPane = map.getPanes().overlayPane;
+				var def = new L.gmx.Deferred();
+				function addLayer() {
+					map.addLayer(layerGroup);
+					if (!layerWMS) {
+						L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
+							layerWMS = cadastreLayer;
+							// map.options.maxZoom = 22;
+							//cadastreLayer.options.maxZoom = 22;
+							cadastreLayer.options.zIndex = 1000000;
+							layerGroup.addLayer(cadastreLayer);
+							if (zones) { layerGroup.addLayer(zones); }
+							if (addon) { layerGroup.addLayer(addon); }
+							layerWMS.getContainer().style.cursor = 'help';
+							if (lastOverlayId) {
+								searchHook(lastOverlayId);
+							} else if (cadNeedClickLatLng) {
+								clickOn({latlng: cadNeedClickLatLng});
+							}
+							layerWMS.on('popupclose', function() {
+								L.CadUtils.clearOverlays();
+							});
+							def.resolve();
+						});
+					} else {
+						layerWMS.getContainer().style.cursor = 'help';
+					}
+					if (overlayPane) {
+						overlayPane.style.cursor = 'help';
+					}
+					if (map._pathRoot) {
+						map._pathRoot.style.cursor = 'help';
+					}
+					map.on('click', clickOn);
+					return def;
+				}
                 var searchHook = function(str) {
                     str = str.trim();
 					var it = L.CadUtils.getCadastreLayer(str);
@@ -469,12 +505,14 @@
 					).then(function(result) {
 						// console.log('result', result);
 						if (result && result.features && result.features.length) {
-							var res = result.features[0];
-							L.CadUtils.setBoundsView(res.attrs.cn, res, layerWMS);
+							addLayer().then(function() {
+								var res = result.features[0];
+								L.CadUtils.setBoundsView(res.attrs.cn, res, layerWMS);
 
-							var featureExtent = L.CadUtils.getFeatureExtent(res, layerWMS._map);							
-							layerGroup._cadClickLatLng = featureExtent.latlng;
-							L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: featureExtent.latlng, cn: str});
+								var featureExtent = L.CadUtils.getFeatureExtent(res, layerWMS._map);							
+								layerGroup._cadClickLatLng = featureExtent.latlng;
+								L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: featureExtent.latlng, cn: str});
+							});
 						} else {
 							showErrorMessage(it.title + '`' + str + '`' + ' не найден!', true, 'Поиск по кадастровым номерам');
 						}
@@ -503,7 +541,6 @@
 					}
 				};
 
-				var overlayPane = map.getPanes().overlayPane;
                 map
                     .on('moveend', function (ev) {
 						var len = lastOverlays.length;
@@ -520,7 +557,7 @@
 							lastOverlayId = null;
 							L.CadUtils.clearOverlays();
 							L.CadUtils._clearLastBalloon(map);
-							toogleSearch(false);
+							// toogleSearch(false);
 							if (overlayPane) {
 								overlayPane.style.cursor = 'default';
 							}
@@ -531,38 +568,11 @@
 					})
 					.on('layeradd', function (ev) {
                         if (ev.layer === layerGroup) {
-                            if (!layerWMS) {
-								L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
-                                    layerWMS = cadastreLayer;
-									// map.options.maxZoom = 22;
-									//cadastreLayer.options.maxZoom = 22;
-									cadastreLayer.options.zIndex = 1000000;
-                                    layerGroup.addLayer(cadastreLayer);
-                                    if (zones) { layerGroup.addLayer(zones); }
-                                    if (addon) { layerGroup.addLayer(addon); }
-                                    layerWMS.getContainer().style.cursor = 'help';
-									if (lastOverlayId) {
-										searchHook(lastOverlayId);
-									} else if (cadNeedClickLatLng) {
-										clickOn({latlng: cadNeedClickLatLng});
-									}
-									layerWMS.on('popupclose', function() {
-										L.CadUtils.clearOverlays();
-									});
-                                });
-                            } else {
-                                layerWMS.getContainer().style.cursor = 'help';
-                            }
-							if (overlayPane) {
-								overlayPane.style.cursor = 'help';
-							}
-							if (map._pathRoot) {
-								map._pathRoot.style.cursor = 'help';
-							}
-							map.on('click', clickOn);
-							toogleSearch(true);
+							addLayer();
+							// toogleSearch(true);
                         }
                     });
+				toogleSearch(true);
             }
             if (window._mapHelper) {
 				_mapHelper.customParamsManager.addProvider({
