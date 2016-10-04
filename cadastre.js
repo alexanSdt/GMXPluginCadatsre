@@ -595,6 +595,12 @@
 				});
 			}
 			return layerGroup;
+        },
+        unload: function() {
+            var lmap = nsGmx.leafletMap,
+                gmxLayers = lmap.gmxControlsManager.get('layers');
+            gmxLayers.removeLayer(layerGroup);
+            lmap.removeLayer(layerGroup);
         }
     };
 
