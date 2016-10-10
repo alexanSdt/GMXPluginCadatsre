@@ -446,101 +446,100 @@
 					gmxLayers.addOverlay(layerGroup, getTxt('cadastrePlugin.name'));
 				}
 				var clickOn = function(ev) {
-					if (!map.isGmxDrawing()) {
-						map._skipClick = true;
-						layerGroup._cadClickLatLng = ev.latlng;
-						L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: layerGroup._cadClickLatLng});
-					}
-				};
-				var overlayPane = map.getPanes().overlayPane;
-				var def = new L.gmx.Deferred();
-				function addLayer() {
-					map.addLayer(layerGroup);
-					if (!layerWMS) {
-						L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
-							layerWMS = cadastreLayer;
-							// map.options.maxZoom = 22;
-							//cadastreLayer.options.maxZoom = 22;
-							cadastreLayer.options.zIndex = 1000000;
-							layerGroup.addLayer(cadastreLayer);
-							if (zones) { layerGroup.addLayer(zones); }
-							if (addon) { layerGroup.addLayer(addon); }
-							layerWMS.getContainer().style.cursor = 'help';
-							if (lastOverlayId) {
-								searchHook(lastOverlayId);
-							} else if (cadNeedClickLatLng) {
-								clickOn({latlng: cadNeedClickLatLng});
-							}
-							layerWMS.on('popupclose', function() {
-								L.CadUtils.clearOverlays();
-							});
-							def.resolve();
-						});
-					} else {
-						layerWMS.getContainer().style.cursor = 'help';
-					}
-					if (overlayPane) {
-						overlayPane.style.cursor = 'help';
-					}
-					if (map._pathRoot) {
-						map._pathRoot.style.cursor = 'help';
-					}
-					map.on('click', clickOn);
-					return def;
-				}
-                var searchHook = function(str) {
-                    str = str.trim();
-					var it = L.CadUtils.getCadastreLayer(str);
-                    if (!searchControl || !it) { return false; }
-					L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + it.id,
-						{
-							WrapStyle: 'func',
-							text: str,
-							limit: it.limit || 11,
-							tolerance: it.tolerance || 64
-						},
-						{
-							callbackParamName: 'callback'
+						if (!map.isGmxDrawing()) {
+							map._skipClick = true;
+							layerGroup._cadClickLatLng = ev.latlng;
+							L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: layerGroup._cadClickLatLng});
 						}
-					).then(function(result) {
-						// console.log('result', result);
-						if (result && result.features && result.features.length) {
-							addLayer().then(function() {
-								var res = result.features[0];
-								L.CadUtils.setBoundsView(res.attrs.cn, res, layerWMS);
-
-								var featureExtent = L.CadUtils.getFeatureExtent(res, layerWMS._map);							
-								layerGroup._cadClickLatLng = featureExtent.latlng;
-								L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: featureExtent.latlng, cn: str});
+					},
+					overlayPane = map.getPanes().overlayPane,
+					def = new L.gmx.Deferred(),
+					addLayer = function() {
+						map.addLayer(layerGroup);
+						if (!layerWMS) {
+							L.gmx.loadLayers(layers).then(function(cadastreLayer, zones, addon) {
+								layerWMS = cadastreLayer;
+								// map.options.maxZoom = 22;
+								//cadastreLayer.options.maxZoom = 22;
+								cadastreLayer.options.zIndex = 1000000;
+								layerGroup.addLayer(cadastreLayer);
+								if (zones) { layerGroup.addLayer(zones); }
+								if (addon) { layerGroup.addLayer(addon); }
+								layerWMS.getContainer().style.cursor = 'help';
+								if (lastOverlayId) {
+									searchHook(lastOverlayId);
+								} else if (cadNeedClickLatLng) {
+									clickOn({latlng: cadNeedClickLatLng});
+								}
+								layerWMS.on('popupclose', function() {
+									L.CadUtils.clearOverlays();
+								});
+								def.resolve();
 							});
 						} else {
-							showErrorMessage(it.title + '`' + str + '`' + ' не найден!', true, 'Поиск по кадастровым номерам');
+							layerWMS.getContainer().style.cursor = 'help';
 						}
-					});
-                    return true;
-                };
-				var toogleSearch = function (flag) {
-					if (flag) {
-						if (!searchControl) {
-							searchControl = window.oSearchControl && 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null;
+						if (overlayPane) {
+							overlayPane.style.cursor = 'help';
 						}
-						if (searchControl) {
-							if (flagSetHook) {
-								searchControl.addSearchByStringHook(searchHook, 1001);
-								searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_1'));
+						if (map._pathRoot) {
+							map._pathRoot.style.cursor = 'help';
+						}
+						map.on('click', clickOn);
+						return def;
+					},
+					searchHook = function(str) {
+						str = str.trim();
+						var it = L.CadUtils.getCadastreLayer(str);
+						if (!searchControl || !it) { return false; }
+						L.gmxUtil.requestJSONP('http://pkk5.rosreestr.ru/api/features/' + it.id,
+							{
+								WrapStyle: 'func',
+								text: str,
+								limit: it.limit || 11,
+								tolerance: it.tolerance || 64
+							},
+							{
+								callbackParamName: 'callback'
 							}
-							flagSetHook = false;
-						}
-					} else {
-						if (searchControl) {
-							searchControl.removeSearchByStringHook(searchHook);
-							searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_0'));
-						}
-						searchControl = null;
-						flagSetHook = true;
-					}
-				};
+						).then(function(result) {
+							// console.log('result', result);
+							if (result && result.features && result.features.length) {
+								addLayer().then(function() {
+									var res = result.features[0];
+									L.CadUtils.setBoundsView(res.attrs.cn, res, layerWMS);
 
+									var featureExtent = L.CadUtils.getFeatureExtent(res, layerWMS._map);							
+									layerGroup._cadClickLatLng = featureExtent.latlng;
+									L.CadUtils.balloon.call(layerWMS, {type: 'click', latlng: featureExtent.latlng, cn: str});
+								});
+							} else {
+								showErrorMessage(it.title + '`' + str + '`' + ' не найден!', true, 'Поиск по кадастровым номерам');
+							}
+						});
+						return true;
+					},
+					toogleSearch = function (flag) {
+						if (flag) {
+							if (!searchControl) {
+								searchControl = window.oSearchControl && 'getSearchControl' in window.oSearchControl ? window.oSearchControl.getSearchControl() : null;
+							}
+							if (searchControl) {
+								if (flagSetHook) {
+									searchControl.addSearchByStringHook(searchHook, 1001);
+									searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_1'));
+								}
+								flagSetHook = false;
+							}
+						} else {
+							if (searchControl) {
+								searchControl.removeSearchByStringHook(searchHook);
+								searchControl.SetPlaceholder(getTxt('$$search$$_Cadastre_0'));
+							}
+							searchControl = null;
+							flagSetHook = true;
+						}
+					};
                 map
                     .on('moveend', function (ev) {
 						var len = lastOverlays.length;
