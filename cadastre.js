@@ -47,8 +47,8 @@
 	  },
 	  onRemove: function (map) {
 		L.ImageOverlay.prototype.onRemove.call(this, map);
-		if (this._dObj) {
-			this._dObj.remove();
+		if (this._dObj && this._dObj._map) {
+			this._dObj._map.removeLayer(this._dObj);
 		}
 	  },
 	  exportGeometry: function () {
@@ -138,8 +138,8 @@
         clearOverlays: function(nm) {	// оставить nm оверлеев
 			lastOverlays.splice(0, lastOverlays.length - (nm || 0)).forEach(function(overlay) {
 				overlay.remove();
-				if (overlay._dObj) {
-					overlay._dObj.remove();
+				if (overlay._dObj && overlay._dObj._map) {
+					overlay._dObj._map.removeLayer(overlay._dObj);
 				}
 			});
         },
@@ -322,8 +322,8 @@
 					} else {
 						var len = lastOverlays.length,
 							overlay = len ? lastOverlays[len - 1] : null;
-						if (overlay && overlay._dObj) {
-							overlay._dObj.remove();
+						if (overlay && overlay._dObj && overlay._dObj._map) {
+							overlay._dObj._map.removeLayer(overlay._dObj);
 						}
 					}
 				});
