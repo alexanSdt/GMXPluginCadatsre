@@ -8,6 +8,7 @@
 		lastFeatureId,
 		lastOverlays = [],
 		lastOverlayId,
+		cadNeedClickLatLng,
 		notHideDrawing = false,
 		localeHash = {
 			name: 'Кадастр Росреестра',
@@ -429,7 +430,6 @@
 			var gmxLayers = map.gmxControlsManager.get('layers');
 			if (!layerGroup) {
                 var layerWMS,
-					cadNeedClickLatLng,
 					flagSetHook = true,
 					layers = [
 						{mapID: 'E7FDC4AA37E94F8FB7F7DA8D62D92D2E', layerID: '601A1D04DD5140388BF5C1A3AD5588F5'}
@@ -579,24 +579,30 @@
 				_mapHelper.customParamsManager.addProvider({
 					name: 'CadastrePlugin',
 					loadState: function(state) {
-						if (state.isVisible) {
-							map.addLayer(layerGroup);
-							cadNeedClickLatLng = state.latlng;
-							lastOverlayId = state.lastOverlayId;
-						}
+						publicInterface.loadState(state, map);
 					},
-					saveState: function() {
-						return {
-							version: '1.0.0',
-							isVisible: map.hasLayer(layerGroup),
-							lastOverlayId: lastOverlayId,
-							latlng: layerGroup._cadClickLatLng
-						}
-					}
+					saveState: publicInterface.saveState
 				});
+			} else if (params.state) {
+				publicInterface.loadState(params.state, map);
 			}
 			return layerGroup;
         },
+        loadState: function(state, map) {
+			if (state.isVisible) {
+				map.addLayer(layerGroup);
+				cadNeedClickLatLng = state.latlng;
+				lastOverlayId = state.lastOverlayId;
+			}
+        },
+        saveState: function() {
+			return {
+				version: '1.0.0',
+				isVisible: layerGroup && layerGroup._map ? true : false,
+				lastOverlayId: lastOverlayId,
+				latlng: layerGroup ? layerGroup._cadClickLatLng : null
+			}
+       },
         unload: function() {
             var lmap = nsGmx.leafletMap,
                 gmxLayers = lmap.gmxControlsManager.get('layers');
